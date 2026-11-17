@@ -1188,7 +1188,7 @@ const wardrobe=document.getElementById('wcWardrobePreview');if(wardrobe&&!wardro
 const observer=new MutationObserver(()=>{if(document.body.dataset.wcSpecies==='otter')sync()});
 observer.observe(document.body,{childList:true,subtree:true});sync();
 })();</script>
-<style id="wc-otter-motion-style">
+<style id="wc-otter-stage-two-background">body[data-wc-species="otter"] .stage:has(.wc-otter-model){background-image:var(--wc-otter-stage-bg,linear-gradient(#170d281a,#170d282a),url("./assets/Backgrounds/Otter_Environment.png"))!important}</style><style id="wc-otter-motion-style">
 /* The otter is stationary; only its PNG expressions change. */
 body[data-wc-species="otter"] .stage #petPlaceholder img.wc-otter-model,
 body[data-wc-species="otter"] .stage #petPlaceholder img.wc-otter-model.wc-otter-reacting {
@@ -1198,21 +1198,30 @@ body[data-wc-species="otter"] .stage #petPlaceholder img.wc-otter-model.wc-otter
 }
 </style>
 <script id="wc-otter-baby-interactions">(()=>{'use strict';
-const root='./assets/Creature_models/Baby_otter_';
-const sources={idle:root+'idle.png',blink:root+'blink.png',pet:root+'pet.png',feed:root+'feed.png',play:root+'wag.png'};
-Object.values(sources).forEach(src=>{const i=new Image();i.src=src});
-let blinkTimer=null,reactionTimer=null,settleTimer=null,token=0;
+const baby='./assets/Creature_models/Baby_otter_';
+const tide='./assets/Creature_models/Otter/Tide_otter_';
+const envBaby='./assets/Backgrounds/Otter_Environment.png';
+const envTide='./assets/Backgrounds/Tide_otter_environment.png';
+let blinkTimer=null,reactionTimer=null,settleTimer=null,token=0,lastStage=-1;
 function active(){return document.body.dataset.wcSpecies==='otter'&&document.body.dataset.wcScreen==='game'}
 function sprite(){return document.querySelector('.stage #petPlaceholder img.wc-otter-model')}
-function setPose(pose){const img=sprite();if(img&&active())img.src=sources[pose]||sources.idle}
-function clearTimers(){clearTimeout(blinkTimer);clearTimeout(reactionTimer);clearTimeout(settleTimer)}
-function scheduleBlink(){clearTimeout(blinkTimer);if(!active()||document.hidden)return;blinkTimer=setTimeout(()=>{if(!active())return;setPose('blink');settleTimer=setTimeout(()=>{setPose('idle');scheduleBlink()},190)},3000+Math.random()*3000)}
-function react(action){if(!active())return;token++;const myToken=token;clearTimers();setPose(action);
-reactionTimer=setTimeout(()=>{if(myToken!==token)return;setPose('blink');settleTimer=setTimeout(()=>{if(myToken!==token)return;setPose('idle');scheduleBlink()},180)},action==='feed'?1300:action==='pet'?1450:1600)}
+function stageNumber(){
+ const label=document.getElementById('speciesDisplay')?.textContent||'';
+ const match=label.match(/Stage\s+(\d+)/i);
+ return match?Number(match[1]):1;
+}
+function sources(){const root=stageNumber()>=2?tide:baby;return {idle:root+'idle.png',blink:root+'blink.png',pet:root+'pet.png',feed:root+'feed.png',play:root+(stageNumber()>=2?'play.png':'wag.png')}}
+function setPose(pose){const img=sprite();if(!img||!active())return;const s=sources();const next=s[pose]||s.idle;if(img.getAttribute('src')!==next)img.src=next}
+function clearTimers(){clearTimeout(blinkTimer);clearTimeout(reactionTimer);clearTimeout(settleTimer);blinkTimer=reactionTimer=settleTimer=null}
+function scheduleBlink(){clearTimeout(blinkTimer);if(!active()||document.hidden)return;blinkTimer=setTimeout(()=>{blinkTimer=null;if(!active())return;setPose('blink');settleTimer=setTimeout(()=>{settleTimer=null;setPose('idle');scheduleBlink()},190)},3000+Math.random()*3000)}
+function syncStage(){if(!active())return;const n=stageNumber();if(n===lastStage)return;lastStage=n;token++;clearTimers();const panel=document.querySelector('.stage');if(panel){panel.style.setProperty('--wc-otter-stage-bg','linear-gradient(#170d281a,#170d282a),url("'+(n>=2?envTide:envBaby)+'")');panel.style.backgroundPosition='center 56%';panel.style.backgroundSize='cover'}
+setPose('idle');const wardrobe=document.querySelector('#wcWardrobePreview img.wc-otter-model');if(wardrobe)wardrobe.src=sources().idle;scheduleBlink()}
+function react(action){if(!active())return;syncStage();token++;const myToken=token;clearTimers();setPose(action);reactionTimer=setTimeout(()=>{reactionTimer=null;if(myToken!==token)return;setPose('blink');settleTimer=setTimeout(()=>{settleTimer=null;if(myToken!==token)return;setPose('idle');scheduleBlink()},180)},action==='feed'?1300:action==='pet'?1450:1600)}
 for(const action of ['pet','feed','play']){const btn=document.getElementById(action);if(btn)btn.addEventListener('click',()=>react(action))}
-const observer=new MutationObserver(()=>{if(active()){if(!reactionTimer&&!settleTimer&&!blinkTimer)scheduleBlink()}else{token++;clearTimers();blinkTimer=reactionTimer=settleTimer=null}});
-observer.observe(document.body,{attributes:true,attributeFilter:['data-wc-species','data-wc-screen']});
-document.addEventListener('visibilitychange',()=>{token++;clearTimers();blinkTimer=reactionTimer=settleTimer=null;if(!document.hidden&&active()){setPose('idle');scheduleBlink()}});
-if(active())scheduleBlink();
+const display=document.getElementById('speciesDisplay');if(display)new MutationObserver(syncStage).observe(display,{childList:true,characterData:true,subtree:true});
+new MutationObserver(()=>{if(active()){syncStage();if(!reactionTimer&&!settleTimer&&!blinkTimer)scheduleBlink()}else{lastStage=-1;token++;clearTimers()}}).observe(document.body,{attributes:true,attributeFilter:['data-wc-species','data-wc-screen']});
+document.addEventListener('visibilitychange',()=>{token++;clearTimers();if(!document.hidden&&active()){syncStage();setPose('idle');scheduleBlink()}});
+Object.values({baby,tide}).forEach(root=>['idle','blink','pet','feed',root===tide?'play':'wag'].forEach(p=>{const img=new Image();img.src=root+p+'.png'}));
+if(active())syncStage();
 })();</script>
 </body></html>
