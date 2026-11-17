@@ -192,15 +192,27 @@ body[data-wc-screen="menu"] .menu-landing .menu-buttons .menu-action small{
 #menuLanding .menu-buttons,#menuLanding .menu-brand,#menuLanding #menuNotice{position:relative;z-index:2}
 @media(prefers-reduced-motion:reduce){#wcTitleAtmosphere{display:none}}
 
-/* Wheel Child — Create Buddy Read enchanted-library treatment.
-   Artwork supplies the decorative frame; all controls remain live HTML. */
+/* Wheel Child — expandable mobile Create Buddy Read panel.
+   The library painting becomes the full-screen backdrop; a translucent gold-edged
+   panel grows with the form, so scrolling never runs past a fixed decorative frame. */
 #createPanel{
-  position:fixed;left:50%;top:0;transform:translateX(-50%);
-  width:min(100vw,520px);max-width:520px;height:100vh;height:100dvh;
-  margin:0;padding:9.5vh 16.5% 8vh;
-  overflow-y:auto;overscroll-behavior:contain;z-index:30;
-  background:#160d24 url("assets/Backgrounds/Create-buddy-read.png") center center / 100% 100% no-repeat;
+  position:relative;isolation:isolate;
+  width:min(100%,520px);max-width:520px;min-height:100vh;min-height:100dvh;
+  margin:0 auto;padding:8vh 7% 7vh;
+  overflow:visible;overscroll-behavior:contain;z-index:30;
+  background:transparent;
   text-align:left;scrollbar-width:thin;scrollbar-color:#b88945 #281331;
+  box-sizing:border-box;
+}
+#createPanel::before{
+  content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:#160d24 url("assets/Backgrounds/Create-buddy-read.png") center center / cover no-repeat;
+}
+#createPanel::after{
+  content:"";position:absolute;inset:12px;z-index:0;pointer-events:none;
+  border:1.5px solid rgba(231,188,105,.9);border-radius:24px;
+  background:linear-gradient(155deg,rgba(43,19,60,.78),rgba(27,13,41,.82));
+  box-shadow:0 0 18px rgba(8,3,16,.35),inset 0 0 22px rgba(178,117,220,.08);
 }
 #createPanel > *{position:relative;z-index:1}
 #createPanel .menu-back{
@@ -243,13 +255,13 @@ body[data-wc-screen="menu"] .menu-landing .menu-buttons .menu-action small{
   box-shadow:0 3px 0 #8c6035,0 0 12px #f2c46b55,inset 0 1px #fff5;
 }
 #createPanel .menu-preview{
-  margin:12px 0;padding:12px 10px;border:1px solid #c29b65;
-  border-radius:15px;background:rgba(35,20,49,.91);
+  margin:12px 0;padding:10px 9px;border:1px solid #c29b65;
+  border-radius:15px;background:rgba(35,20,49,.86);
   box-shadow:0 4px 12px #09051066,inset 0 1px #fff2;
 }
-#createPanel .preview-art{height:150px}
-#createPanel .preview-art .creature-svg{width:140px;height:140px}
-#createPanel .menu-preview h3{font-size:18px}
+#createPanel .preview-art{height:118px}
+#createPanel .preview-art .creature-svg{width:108px;height:108px}
+#createPanel .menu-preview h3{font-size:17px}
 #createPanel .menu-action{
   display:block;width:100%;margin:9px 0 0;padding:11px 12px;min-height:43px;
   border:1px solid #e4bd77;border-radius:13px;
@@ -260,14 +272,17 @@ body[data-wc-screen="menu"] .menu-landing .menu-buttons .menu-action small{
 #createPanel .menu-action:hover,#createPanel .menu-action:focus-visible{background:linear-gradient(145deg,#704887,#38204b)}
 #createPanel .menu-secondary{background:rgba(43,29,53,.94)}
 #createPanel #createError{margin:8px 0 0;text-align:center}
+@media(max-width:540px){
+  #createPanel{padding:7vh 6% 7vh}
+  #createPanel::after{inset:9px;border-radius:20px}
+}
 @media(max-height:740px){
   #createPanel{padding-top:6vh;padding-bottom:6vh}
-  #createPanel .preview-art{height:120px}
-  #createPanel .preview-art .creature-svg{height:112px;width:112px}
-  #createPanel .menu-preview{padding:8px;margin:8px 0}
+  #createPanel .preview-art{height:104px}
+  #createPanel .preview-art .creature-svg{height:96px;width:96px}
+  #createPanel .menu-preview{padding:7px;margin:8px 0}
 }
 @media(prefers-reduced-motion:reduce){#createPanel *{scroll-behavior:auto!important}}
-
 </style>
 <style id="wc-mobile-title-layout-fix">
 /* Wheel Child is designed for phones: keep the complete painted title composition
