@@ -1201,8 +1201,10 @@ body[data-wc-species="otter"] .stage #petPlaceholder img.wc-otter-model.wc-otter
 <script id="wc-otter-baby-interactions">(()=>{'use strict';
 const baby='./assets/Creature_models/Baby_otter_';
 const tide='./assets/Creature_models/Otter/Tide_otter_';
+const guardian='./assets/Creature_models/Otter/Riverguard_otter_';
 const envBaby='./assets/Backgrounds/Otter_Environment.png';
 const envTide='./assets/Backgrounds/Tide_otter_environment.png';
+const envGuardian='./assets/Backgrounds/Riverguard_environment.png';
 let blinkTimer=null,reactionTimer=null,settleTimer=null,token=0,lastStage=-1;
 function active(){return document.body.dataset.wcSpecies==='otter'&&document.body.dataset.wcScreen==='game'}
 function sprite(){return document.querySelector('.stage #petPlaceholder img.wc-otter-model')}
@@ -1211,18 +1213,18 @@ function stageNumber(){
  const match=label.match(/Stage\s+(\d+)/i);
  return match?Number(match[1]):1;
 }
-function sources(){const root=stageNumber()>=2?tide:baby;return {idle:root+'idle.png',blink:root+'blink.png',pet:root+'pet.png',feed:root+'feed.png',play:root+(stageNumber()>=2?'play.png':'wag.png')}}
+function sources(){const n=stageNumber();const root=n>=3?guardian:n===2?tide:baby;return {idle:root+'idle.png',blink:root+'blink.png',pet:root+'pet.png',feed:root+'feed.png',play:root+(n>=2?'play.png':'wag.png')}}
 function setPose(pose){const img=sprite();if(!img||!active())return;const s=sources();const next=s[pose]||s.idle;if(img.getAttribute('src')!==next)img.src=next}
 function clearTimers(){clearTimeout(blinkTimer);clearTimeout(reactionTimer);clearTimeout(settleTimer);blinkTimer=reactionTimer=settleTimer=null}
 function scheduleBlink(){clearTimeout(blinkTimer);if(!active()||document.hidden)return;blinkTimer=setTimeout(()=>{blinkTimer=null;if(!active())return;setPose('blink');settleTimer=setTimeout(()=>{settleTimer=null;setPose('idle');scheduleBlink()},190)},3000+Math.random()*3000)}
-function syncStage(){if(!active())return;const n=stageNumber();if(n===lastStage)return;lastStage=n;token++;clearTimers();const panel=document.querySelector('.stage');if(panel){panel.style.setProperty('background-image','linear-gradient(#170d281a,#170d282a),url("'+(n===2?envTide:envBaby)+'")','important');panel.style.setProperty('background-position','center 56%','important');panel.style.setProperty('background-size','cover','important')}
-setPose('idle');const wardrobe=document.querySelector('#wcWardrobePreview img.wc-otter-model');if(wardrobe)wardrobe.src=sources().idle;scheduleBlink()}
+function syncStage(){if(!active())return;const n=stageNumber();if(n===lastStage)return;lastStage=n;token++;clearTimers();const panel=document.querySelector('.stage');if(panel){panel.style.setProperty('background-image','linear-gradient(#170d281a,#170d282a),url("'+(n>=3?envGuardian:n===2?envTide:envBaby)+'")','important');panel.style.setProperty('background-position','center 56%','important');panel.style.setProperty('background-size','cover','important')}
+const img=sprite();if(img)img.classList.toggle('wc-riverguard-model',n>=3);setPose('idle');const wardrobe=document.querySelector('#wcWardrobePreview img.wc-otter-model');if(wardrobe)wardrobe.src=sources().idle;scheduleBlink()}
 function react(action){if(!active())return;syncStage();token++;const myToken=token;clearTimers();setPose(action);reactionTimer=setTimeout(()=>{reactionTimer=null;if(myToken!==token)return;setPose('blink');settleTimer=setTimeout(()=>{settleTimer=null;if(myToken!==token)return;setPose('idle');scheduleBlink()},180)},action==='feed'?1300:action==='pet'?1450:1600)}
 for(const action of ['pet','feed','play']){const btn=document.getElementById(action);if(btn)btn.addEventListener('click',()=>react(action))}
 const display=document.getElementById('speciesDisplay');if(display)new MutationObserver(syncStage).observe(display,{childList:true,characterData:true,subtree:true});
 new MutationObserver(()=>{if(active()){syncStage();if(!reactionTimer&&!settleTimer&&!blinkTimer)scheduleBlink()}else{lastStage=-1;token++;clearTimers();const panel=document.querySelector('.stage');if(panel){panel.style.removeProperty('background-image');panel.style.removeProperty('background-position');panel.style.removeProperty('background-size')}}}).observe(document.body,{attributes:true,attributeFilter:['data-wc-species','data-wc-screen']});
 document.addEventListener('visibilitychange',()=>{token++;clearTimers();if(!document.hidden&&active()){syncStage();setPose('idle');scheduleBlink()}});
-Object.values({baby,tide}).forEach(root=>['idle','blink','pet','feed',root===tide?'play':'wag'].forEach(p=>{const img=new Image();img.src=root+p+'.png'}));
+Object.values({baby,tide,guardian}).forEach(root=>['idle','blink','pet','feed',root===tide?'play':'wag'].forEach(p=>{const img=new Image();img.src=root+p+'.png'}));
 if(active())syncStage();
 })();</script>
 
@@ -1249,16 +1251,16 @@ const KEY='wheel-child-prototype-v01';const read=()=>{try{return JSON.parse(loca
 const status=document.getElementById('evolution');if(!status)return;
 const button=document.createElement('button');button.type='button';button.id='wcOtterEvolveButton';button.textContent='✨ Evolve into Tide Otter';status.insertAdjacentElement('afterend',button);
 let busy=false;
-function sync(){const state=read();const otter=document.body.dataset.wcSpecies==='otter';const points=Number(state.books)||0;const evolved=Number(state.otterEvolvedStage)||0;const ready=otter&&points>=2&&evolved<1&&!busy;button.classList.toggle('wc-ready',ready);button.disabled=!ready;if(ready)status.textContent='✨ Tide Otter evolution ready! Tap Evolve when you are ready.';}
-button.addEventListener('click',()=>{const state=read();if(busy||document.body.dataset.wcSpecies!=='otter'||Number(state.books)<2||Number(state.otterEvolvedStage)>=1)return;
+function sync(){const state=read();const otter=document.body.dataset.wcSpecies==='otter';const points=Number(state.books)||0;const evolved=Number(state.otterEvolvedStage)||0;const next=evolved<1?1:evolved<2?2:0;const ready=otter&&next>0&&points>=(next===1?2:4)&&!busy;button.textContent=next===2?'🌊 Evolve into River Guardian':'✨ Evolve into Tide Otter';button.classList.toggle('wc-ready',ready);button.disabled=!ready;if(ready)status.textContent=next===2?'🌊 River Guardian evolution ready! Tap Evolve when you are ready.':'✨ Tide Otter evolution ready! Tap Evolve when you are ready.';}
+button.addEventListener('click',()=>{const state=read();const current=Number(state.otterEvolvedStage)||0;const target=current+1;if(busy||document.body.dataset.wcSpecies!=='otter'||target>2||Number(state.books)<(target===1?2:4))return;
 const panel=document.querySelector('.stage');if(!panel)return;busy=true;sync();
-const scene=document.createElement('div');scene.id='wcOtterEvolveScene';scene.setAttribute('aria-label','Water gathers around your otter as it evolves into Tide Otter');
+const scene=document.createElement('div');scene.id='wcOtterEvolveScene';scene.setAttribute('aria-label',target===2?'Ancient river currents surround Tide Otter as it evolves into River Guardian':'Water gathers around your otter as it evolves into Tide Otter');
 for(let i=0;i<3;i++){const ripple=document.createElement('span');ripple.className='wc-water-ripple';ripple.style.setProperty('--delay',(i*.43)+'s');scene.appendChild(ripple)}
 const orb=document.createElement('div');orb.className='wc-water-orb';scene.appendChild(orb);
 for(let i=0;i<18;i++){const drop=document.createElement('span');drop.className='wc-water-droplet';const angle=i*2.399963;const r=17+(i%5)*6;drop.style.setProperty('--x',(50+Math.cos(angle)*r)+'%');drop.style.setProperty('--y',(52+Math.sin(angle)*r*.75)+'%');drop.style.setProperty('--size',(4+i%4*2)+'px');drop.style.setProperty('--delay',((i%6)*.09)+'s');scene.appendChild(drop)}
-const name=document.createElement('div');name.className='wc-evolve-name';name.textContent='Tide Otter';scene.appendChild(name);panel.appendChild(scene);
+const name=document.createElement('div');name.className='wc-evolve-name';name.textContent=target===2?'River Guardian':'Tide Otter';scene.appendChild(name);panel.appendChild(scene);
 let committed=false;
-const reveal=()=>{if(committed)return;committed=true;const latest=read();latest.otterEvolvedStage=Math.max(1,Number(latest.otterEvolvedStage)||0);localStorage.setItem(KEY,JSON.stringify(latest));window.dispatchEvent(new Event('wheelchild:otter-evolved'));const display=document.getElementById('speciesDisplay');if(display)display.textContent='Tide Otter · Stage 2';window.WheelChildArt?.renderCurrent();};
+const reveal=()=>{if(committed)return;committed=true;const latest=read();latest.otterEvolvedStage=Math.max(target,Number(latest.otterEvolvedStage)||0);localStorage.setItem(KEY,JSON.stringify(latest));window.dispatchEvent(new Event('wheelchild:otter-evolved'));const display=document.getElementById('speciesDisplay');if(display)display.textContent=target===2?'River Guardian · Stage 3':'Tide Otter · Stage 2';window.WheelChildArt?.renderCurrent();};
 const finish=()=>{reveal();scene.remove();busy=false;sync()};
 if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){finish();return}
 setTimeout(reveal,2600);
@@ -1268,4 +1270,7 @@ new MutationObserver(sync).observe(document.getElementById('speciesDisplay'),{ch
 window.addEventListener('wheelchild:render',sync);window.addEventListener('storage',sync);
 setInterval(sync,1100);sync();
 })();</script>
-</body></html>
+<style id="wc-riverguard-fit">
+body[data-wc-species="otter"] .stage #petPlaceholder img.wc-riverguard-model{width:82%!important;height:82%!important;max-height:205px!important;object-fit:contain!important;object-position:center bottom!important;margin:auto!important;transform:translateY(-3px)!important;animation:none!important}
+body[data-wc-species="otter"] .stage:has(img.wc-riverguard-model) #petPlaceholder{overflow:hidden!important;align-items:center!important;justify-content:center!important}
+</style></body></html>
