@@ -1205,6 +1205,11 @@ const guardian='./assets/Creature_models/Otter/Riverguard_otter_';
 const envBaby='./assets/Backgrounds/Otter_Environment.png';
 const envTide='./assets/Backgrounds/Tide_otter_environment.png';
 const envGuardian='./assets/Backgrounds/Riverguard_environment.png';
+let guardianBackground=envTide;
+const guardianProbe=new Image();
+guardianProbe.onload=()=>{guardianBackground=envGuardian;lastStage=-1;syncStage()};
+guardianProbe.onerror=()=>{guardianBackground=envTide;lastStage=-1;syncStage()};
+guardianProbe.src=envGuardian;
 let blinkTimer=null,reactionTimer=null,settleTimer=null,token=0,lastStage=-1;
 function active(){return document.body.dataset.wcSpecies==='otter'&&document.body.dataset.wcScreen==='game'}
 function sprite(){return document.querySelector('.stage #petPlaceholder img.wc-otter-model')}
@@ -1217,7 +1222,7 @@ function sources(){const n=stageNumber();const root=n>=3?guardian:n===2?tide:bab
 function setPose(pose){const img=sprite();if(!img||!active())return;const s=sources();const next=s[pose]||s.idle;if(img.getAttribute('src')!==next)img.src=next}
 function clearTimers(){clearTimeout(blinkTimer);clearTimeout(reactionTimer);clearTimeout(settleTimer);blinkTimer=reactionTimer=settleTimer=null}
 function scheduleBlink(){clearTimeout(blinkTimer);if(!active()||document.hidden)return;blinkTimer=setTimeout(()=>{blinkTimer=null;if(!active())return;setPose('blink');settleTimer=setTimeout(()=>{settleTimer=null;setPose('idle');scheduleBlink()},190)},3000+Math.random()*3000)}
-function syncStage(){if(!active())return;const n=stageNumber();if(n===lastStage)return;lastStage=n;token++;clearTimers();const panel=document.querySelector('.stage');if(panel){panel.style.setProperty('background-image','linear-gradient(#170d281a,#170d282a),url("'+(n>=3?envGuardian:n===2?envTide:envBaby)+'")','important');panel.style.setProperty('background-position','center 56%','important');panel.style.setProperty('background-size','cover','important')}
+function syncStage(){if(!active())return;const n=stageNumber();if(n===lastStage)return;lastStage=n;token++;clearTimers();const panel=document.querySelector('.stage');if(panel){panel.style.setProperty('background-image','linear-gradient(#170d281a,#170d282a),url("'+(n>=3?guardianBackground:n===2?envTide:envBaby)+'")','important');panel.style.setProperty('background-position','center 56%','important');panel.style.setProperty('background-size','cover','important')}
 const img=sprite();if(img)img.classList.toggle('wc-riverguard-model',n>=3);setPose('idle');const wardrobe=document.querySelector('#wcWardrobePreview img.wc-otter-model');if(wardrobe)wardrobe.src=sources().idle;scheduleBlink()}
 function react(action){if(!active())return;syncStage();token++;const myToken=token;clearTimers();setPose(action);reactionTimer=setTimeout(()=>{reactionTimer=null;if(myToken!==token)return;setPose('blink');settleTimer=setTimeout(()=>{settleTimer=null;if(myToken!==token)return;setPose('idle');scheduleBlink()},180)},action==='feed'?1300:action==='pet'?1450:1600)}
 for(const action of ['pet','feed','play']){const btn=document.getElementById(action);if(btn)btn.addEventListener('click',()=>react(action))}
@@ -1252,8 +1257,20 @@ const status=document.getElementById('evolution');if(!status)return;
 const button=document.createElement('button');button.type='button';button.id='wcOtterEvolveButton';button.textContent='✨ Evolve into Tide Otter';status.insertAdjacentElement('afterend',button);
 let busy=false;
 function sync(){const state=read();const otter=document.body.dataset.wcSpecies==='otter';const points=Number(state.books)||0;const evolved=Number(state.otterEvolvedStage)||0;const next=evolved<1?1:evolved<2?2:0;const ready=otter&&next>0&&points>=(next===1?2:4)&&!busy;button.textContent=next===2?'🌊 Evolve into River Guardian':'✨ Evolve into Tide Otter';button.classList.toggle('wc-ready',ready);button.disabled=!ready;if(ready)status.textContent=next===2?'🌊 River Guardian evolution ready! Tap Evolve when you are ready.':'✨ Tide Otter evolution ready! Tap Evolve when you are ready.';}
+
+function runGuardianCinema(panel,target){
+ const scene=document.createElement('div');scene.id='wcGuardianCinema';scene.setAttribute('role','img');scene.setAttribute('aria-label','The river surges and parts as Tide Otter awakens as River Guardian');
+ for(const cls of ['back','film','new','idle','flood','left','right','core','runes','eye a','eye b','shock','wipe','title']){const el=document.createElement('div');el.className='wc-gc-'+cls.split(' ').join(' wc-gc-');if(cls.startsWith('eye '))el.classList.add(cls.split(' ')[1]);if(cls==='title')el.textContent='RIVER GUARDIAN AWAKENED';scene.appendChild(el)}
+ for(let i=0;i<26;i++){const el=document.createElement('i');el.className='wc-gc-drop';el.style.setProperty('--x',((i*37)%97)+'%');el.style.setProperty('--y',((i*19)%88)+'%');el.style.setProperty('--sz',(3+i%5*2)+'px');el.style.setProperty('--delay',(4.5+(i%9)*.22)+'s');scene.appendChild(el)}
+ const bgProbe=new Image();bgProbe.onload=()=>scene.style.setProperty('--wc-guardian-background',"url('./assets/Backgrounds/Riverguard_environment.png')");bgProbe.src='./assets/Backgrounds/Riverguard_environment.png';
+ panel.appendChild(scene);
+ let committed=false;const commit=()=>{if(committed)return;committed=true;const latest=read();latest.otterEvolvedStage=Math.max(2,Number(latest.otterEvolvedStage)||0);localStorage.setItem(KEY,JSON.stringify(latest));window.dispatchEvent(new Event('wheelchild:otter-evolved'));const display=document.getElementById('speciesDisplay');if(display)display.textContent='River Guardian · Stage 3';window.WheelChildArt?.renderCurrent()};
+ const finish=()=>{commit();scene.remove();busy=false;sync()};
+ if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){finish();return}
+ setTimeout(commit,7400);setTimeout(finish,9500);
+}
 button.addEventListener('click',()=>{const state=read();const current=Number(state.otterEvolvedStage)||0;const target=current+1;if(busy||document.body.dataset.wcSpecies!=='otter'||target>2||Number(state.books)<(target===1?2:4))return;
-const panel=document.querySelector('.stage');if(!panel)return;busy=true;sync();
+const panel=document.querySelector('.stage');if(!panel)return;busy=true;sync();if(target===2){runGuardianCinema(panel,target);return;}
 const scene=document.createElement('div');scene.id='wcOtterEvolveScene';scene.setAttribute('aria-label',target===2?'Ancient river currents surround Tide Otter as it evolves into River Guardian':'Water gathers around your otter as it evolves into Tide Otter');
 for(let i=0;i<3;i++){const ripple=document.createElement('span');ripple.className='wc-water-ripple';ripple.style.setProperty('--delay',(i*.43)+'s');scene.appendChild(ripple)}
 const orb=document.createElement('div');orb.className='wc-water-orb';scene.appendChild(orb);
@@ -1270,7 +1287,44 @@ new MutationObserver(sync).observe(document.getElementById('speciesDisplay'),{ch
 window.addEventListener('wheelchild:render',sync);window.addEventListener('storage',sync);
 setInterval(sync,1100);sync();
 })();</script>
+
+<style id="wc-riverguard-cinematic-v2">
+.stage{isolation:isolate}
+#wcGuardianCinema{position:absolute;inset:0;z-index:80;overflow:hidden;border-radius:inherit;pointer-events:none;background:#052b45;isolation:isolate;contain:paint}
+#wcGuardianCinema *{box-sizing:border-box}
+#wcGuardianCinema .wc-gc-back{position:absolute;inset:0;background:linear-gradient(#001b3280,#002f4580),url('./assets/Backgrounds/Tide_otter_environment.png') center 56%/cover;animation:wcGcQuake 1.5s .45s ease-in-out 2}
+#wcGuardianCinema .wc-gc-film{position:absolute;inset:0;background:url('./assets/Backgrounds/Riverguard_otter_evolution.png') center/cover no-repeat;opacity:0;transform:scale(1.08);animation:wcGcFilm 9.5s both}
+#wcGuardianCinema .wc-gc-new{position:absolute;inset:0;background:var(--wc-guardian-background,url('./assets/Backgrounds/Tide_otter_environment.png')) center 56%/cover no-repeat;opacity:0;animation:wcGcNew 9.5s both}
+#wcGuardianCinema .wc-gc-idle{position:absolute;inset:0;background:url('./assets/Creature_models/Otter/Riverguard_otter_idle.png') center 60%/auto 72% no-repeat;opacity:0;animation:wcGcIdle 9.5s both}
+#wcGuardianCinema .wc-gc-flood{position:absolute;inset:-12%;background:radial-gradient(ellipse at 55% 30%,#9cffff7a,transparent 46%),repeating-linear-gradient(164deg,#b0f8ffb8 0 3px,#1674acdb 5px 23px,#073d74ed 28px 44px,#7bd9f2c7 47px 52px);filter:drop-shadow(0 0 14px #8ffaff);opacity:0;animation:wcGcFlood 9.5s both}
+#wcGuardianCinema .wc-gc-left,#wcGuardianCinema .wc-gc-right{position:absolute;top:-12%;bottom:-12%;width:62%;background:repeating-linear-gradient(166deg,#78dfffed 0 5px,#116b9bf2 14px 38px,#043c6ff7 42px 70px);box-shadow:inset 0 0 40px #b4f9ff88,0 0 35px #78eaffaa;opacity:0;animation:wcGcPartL 9.5s both}
+#wcGuardianCinema .wc-gc-left{left:-8%;border-radius:0 48% 42% 0/0 22% 34% 0}
+#wcGuardianCinema .wc-gc-right{right:-8%;transform:scaleX(-1);border-radius:0 48% 42% 0/0 22% 34% 0;animation-name:wcGcPartR}
+#wcGuardianCinema .wc-gc-core{position:absolute;inset:-20%;background:radial-gradient(ellipse at center,#d6ffffd9 0%,#3be8ff8c 15%,#008bd04d 33%,transparent 63%);mix-blend-mode:screen;opacity:0;animation:wcGcCore 9.5s both}
+#wcGuardianCinema .wc-gc-eye{position:absolute;top:35%;width:9%;height:6%;border-radius:50%;background:#cfffff;filter:blur(6px);box-shadow:0 0 14px 8px #2df7ff,0 0 45px 19px #08bfff;opacity:0;animation:wcGcEyes 9.5s both;mix-blend-mode:screen}
+#wcGuardianCinema .wc-gc-eye.a{left:39%}#wcGuardianCinema .wc-gc-eye.b{left:53%}
+#wcGuardianCinema .wc-gc-runes{position:absolute;inset:7%;border:3px dotted #74eaffad;border-radius:50%;box-shadow:0 0 24px #42dfff,inset 0 0 20px #42dfff;opacity:0;animation:wcGcRunes 9.5s both}
+#wcGuardianCinema .wc-gc-shock{position:absolute;left:50%;top:50%;width:24%;aspect-ratio:1;border:12px solid #b7ffff;border-radius:50%;box-shadow:0 0 38px #2ef5ff;opacity:0;animation:wcGcShock 9.5s both}
+#wcGuardianCinema .wc-gc-wipe{position:absolute;inset:-15%;background:radial-gradient(ellipse at center,#d6ffff 0%,#31c8e9 32%,#064e89 68%,#002f62 100%);opacity:0;animation:wcGcWipe 9.5s both}
+#wcGuardianCinema .wc-gc-title{position:absolute;bottom:9%;left:0;right:0;text-align:center;font:700 clamp(18px,4vw,27px) Georgia,serif;letter-spacing:.05em;color:#eaffff;text-shadow:0 2px 9px #002a45,0 0 20px #27dfff;opacity:0;animation:wcGcTitle 9.5s both}
+#wcGuardianCinema .wc-gc-drop{position:absolute;left:var(--x);top:var(--y);width:var(--sz);height:calc(var(--sz)*1.8);border-radius:60% 60% 70% 70%;background:#b0faff;box-shadow:0 0 9px #45dfff;opacity:0;animation:wcGcDrop 1.5s var(--delay) ease-in-out both}
+@keyframes wcGcQuake{0%,100%{transform:translate(0)}15%{transform:translate(2px,-2px)}30%{transform:translate(-3px,2px)}45%{transform:translate(3px,1px)}65%{transform:translate(-2px,-3px)}}
+@keyframes wcGcFilm{0%,32%{opacity:0;transform:scale(1.12)}43%,70%{opacity:1;transform:scale(1.02)}79%,100%{opacity:0;transform:scale(1)}}
+@keyframes wcGcFlood{0%,10%{opacity:0;transform:translateY(110%)}27%,34%{opacity:1;transform:translateY(0)}40%,100%{opacity:0;transform:translateY(-14%)}}
+@keyframes wcGcPartL{0%,31%{opacity:0;transform:translateX(0)}35%,42%{opacity:1;transform:translateX(0)}53%,100%{opacity:0;transform:translateX(-110%)}}
+@keyframes wcGcPartR{0%,31%{opacity:0;transform:scaleX(-1) translateX(0)}35%,42%{opacity:1;transform:scaleX(-1) translateX(0)}53%,100%{opacity:0;transform:scaleX(-1) translateX(-110%)}}
+@keyframes wcGcCore{0%,36%{opacity:0}44%{opacity:.55}53%{opacity:.2}59%{opacity:.9}64%{opacity:.35}69%{opacity:1}74%,100%{opacity:0}}
+@keyframes wcGcEyes{0%,43%{opacity:0}49%{opacity:.6}54%{opacity:.1}60%{opacity:.85}65%{opacity:.25}70%{opacity:1}75%,100%{opacity:0}}
+@keyframes wcGcRunes{0%,41%{opacity:0;transform:scale(.8) rotate(-15deg)}53%{opacity:.8}67%{opacity:1;transform:scale(1.15) rotate(12deg)}77%,100%{opacity:0;transform:scale(1.5) rotate(20deg)}}
+@keyframes wcGcShock{0%,68%{opacity:0;transform:translate(-50%,-50%) scale(.1)}70%{opacity:1}78%,100%{opacity:0;transform:translate(-50%,-50%) scale(12)}}
+@keyframes wcGcWipe{0%,72%{opacity:0;transform:scale(.01)}75%{opacity:1;transform:scale(2)}80%{opacity:1}87%,100%{opacity:0}}
+@keyframes wcGcNew{0%,76%{opacity:0}80%,100%{opacity:1}}
+@keyframes wcGcIdle{0%,79%{opacity:0}84%,100%{opacity:1}}
+@keyframes wcGcTitle{0%,84%{opacity:0;transform:translateY(12px)}90%,97%{opacity:1;transform:translateY(0)}100%{opacity:0}}
+@keyframes wcGcDrop{0%{opacity:0;transform:translateY(-35px) scale(.4)}30%{opacity:.95}100%{opacity:0;transform:translateY(80px) scale(.7)}}
+@media(prefers-reduced-motion:reduce){#wcGuardianCinema *{animation:none!important}#wcGuardianCinema .wc-gc-new,#wcGuardianCinema .wc-gc-idle{opacity:1!important}}
+</style>
 <style id="wc-riverguard-fit">
-body[data-wc-species="otter"] .stage #petPlaceholder img.wc-riverguard-model{width:82%!important;height:82%!important;max-height:205px!important;object-fit:contain!important;object-position:center bottom!important;margin:auto!important;transform:translateY(-3px)!important;animation:none!important}
-body[data-wc-species="otter"] .stage:has(img.wc-riverguard-model) #petPlaceholder{overflow:hidden!important;align-items:center!important;justify-content:center!important}
+body[data-wc-species="otter"] .stage #petPlaceholder img.wc-riverguard-model{width:100%!important;height:100%!important;max-height:none!important;max-width:none!important;object-fit:contain!important;object-position:center bottom!important;margin:auto!important;transform:none!important;animation:none!important}
+body[data-wc-species="otter"] .stage:has(img.wc-riverguard-model) #petPlaceholder{overflow:hidden!important;align-items:center!important;justify-content:center!important;width:100%!important;height:100%!important;min-height:0!important;padding:0!important}
 </style></body></html>
