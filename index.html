@@ -706,7 +706,7 @@ render();
 (()=>{
 const audio=document.getElementById('wcTitleMusic'),overlay=document.getElementById('wcSettingsOverlay'),music=document.getElementById('wcMusicVolume'),ui=document.getElementById('wcUiVolume'),status=document.getElementById('wcMusicStatus');
 let ctx=null,hasGesture=false;
-const read=(key,defaultValue)=>{try{const n=Number(localStorage.getItem(key));return Number.isFinite(n)&&n>=0&&n<=100?n:defaultValue}catch{return defaultValue}};
+const read=(key,defaultValue)=>{try{const saved=localStorage.getItem(key);if(saved===null)return defaultValue;const n=Number(saved);return Number.isFinite(n)&&n>=0&&n<=100?n:defaultValue}catch{return defaultValue}};
 music.value=read('wc-title-volume',50);ui.value=read('wc-ui-volume',60);
 function sync(){audio.volume=Number(music.value)/100;audio.muted=audio.volume===0;document.getElementById('wcMusicPercent').textContent=music.value+'%';document.getElementById('wcUiPercent').textContent=ui.value+'%'}
 function startMusic(){if(!hasGesture||audio.muted||!audio.paused)return;audio.play().then(()=>{status.textContent='Music playing.'}).catch(()=>{status.textContent='Music unavailable in this preview; check the deployed website.'})}
