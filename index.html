@@ -17,6 +17,9 @@ select option{background:#20182c;color:#f7eafa}
 /* Bookshelf progress controls: centered labels, consistent typography, touch-friendly entry. */
 #progressMode{font-family:inherit;font-size:16px;font-weight:400;text-align:center;text-align-last:center;padding-left:14px;padding-right:32px}
 #progressMode option{font-family:inherit;text-align:center}
+/* Keep the selected reading mode legible on mobile browsers. */
+#progressMode{color:#f7eafa!important;-webkit-text-fill-color:#f7eafa!important;background-color:#20182c!important}
+#progressMode option{color:#f7eafa;background-color:#20182c}
 #pagesFields input[type="number"],#percentFields input[type="number"]{-webkit-appearance:none;appearance:textfield;-moz-appearance:textfield}
 #pagesFields input[type="number"]::-webkit-inner-spin-button,#pagesFields input[type="number"]::-webkit-outer-spin-button,#percentFields input[type="number"]::-webkit-inner-spin-button,#percentFields input[type="number"]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;display:none}
 
