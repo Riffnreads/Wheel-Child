@@ -184,11 +184,17 @@ body[data-wc-screen="menu"] .menu-landing .menu-buttons .menu-action small{
   color:#f1d4a1;
   text-shadow:0 1px 1px #241029;
 }
-</style></head><body><section id="companionMenu" hidden><div class="wc-title-paint" aria-hidden="true"></div><div class="wc-eye-glow" aria-hidden="true"></div><div class="wc-water-ripple" aria-hidden="true"></div><div class="wc-waterfall" aria-hidden="true"></div>
+</style><style id="wcTitleAtmosphereStyle">
+/* Title-screen-only atmospheric canvas; artwork and controls remain untouched. */
+#menuLanding{isolation:isolate}
+#wcTitleAtmosphere{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none;display:block}
+#menuLanding .menu-buttons,#menuLanding .menu-brand,#menuLanding #menuNotice{position:relative;z-index:2}
+@media(prefers-reduced-motion:reduce){#wcTitleAtmosphere{display:none}}
+</style></head><body><section id="companionMenu" hidden><div class="wc-title-paint" aria-hidden="true"></div><div class="wc-eye-glow" aria-hidden="true"></div><div class="wc-water-ripple" aria-hidden="true"></div>
 <div class="wc-music-control" id="wcMusicControl"><button type="button" id="wcMusicToggle" aria-label="Settings" title="Settings">⚙</button></div><audio id="wcTitleMusic" src="assets/audio/Enchanted%20Forest%20(1).mp3" preload="auto" loop></audio>
 <div class="wc-settings-overlay" id="wcSettingsOverlay" hidden><div class="wc-settings-panel" role="dialog" aria-modal="true" aria-labelledby="wcSettingsHeading"><h2 id="wcSettingsHeading">⚙ Settings</h2><label for="wcMusicVolume">🎵 Music Volume <span id="wcMusicPercent">50%</span></label><input id="wcMusicVolume" type="range" min="0" max="100" value="50"><label for="wcUiVolume">🔊 UI Volume <span id="wcUiPercent">60%</span></label><input id="wcUiVolume" type="range" min="0" max="100" value="60"><p id="wcMusicStatus" class="hint" role="status">Music starts after your first tap.</p><button type="button" class="small-btn" id="wcSettingsClose">Close</button></div></div>
 <div class="menu-sky" aria-hidden="true"><span>✦</span><span>✧</span><span>✦</span><span>✧</span></div>
-<div class="menu-landing" id="menuLanding"><div class="menu-brand"><h1 class="menu-title">WHEEL<br><em>CHILD</em></h1><p>Every story deserves a companion.</p><p class="menu-subtagline">Read together. Evolve together.</p></div><div class="menu-buttons"><button type="button" id="showCreate" class="menu-action">Create Buddy Read</button><button type="button" id="showExisting" class="menu-action">Existing Buddy Reads</button><button type="button" id="showJoin" class="menu-action">Join Buddy Read <small>Coming soon</small></button></div><p id="menuNotice" class="hint" aria-live="polite"></p></div>
+<div class="menu-landing" id="menuLanding"><canvas id="wcTitleAtmosphere" aria-hidden="true"></canvas><div class="menu-brand"><h1 class="menu-title">WHEEL<br><em>CHILD</em></h1><p>Every story deserves a companion.</p><p class="menu-subtagline">Read together. Evolve together.</p></div><div class="menu-buttons"><button type="button" id="showCreate" class="menu-action">Create Buddy Read</button><button type="button" id="showExisting" class="menu-action">Existing Buddy Reads</button><button type="button" id="showJoin" class="menu-action">Join Buddy Read <small>Coming soon</small></button></div><p id="menuNotice" class="hint" aria-live="polite"></p></div>
 <div class="menu-subview" id="existingPanel" hidden><button class="menu-back" type="button" data-menu-back>← Main Menu</button><h2 class="menu-section-title">Your Buddy Reads</h2><p class="muted">Select a companion to preview. Tap it again or choose Enter to continue.</p><div id="companionList"></div><div id="existingPreview" class="menu-preview" hidden><div id="existingPreviewArt" class="preview-art"></div><h3 id="existingPreviewName"></h3><p id="existingPreviewInfo" class="muted"></p><button type="button" class="menu-action" id="enterCompanion">Enter Buddy Read →</button><button type="button" class="menu-action menu-danger" id="deleteCompanion">Delete Buddy Read</button></div></div>
 <div class="menu-subview" id="createPanel" hidden><button class="menu-back" type="button" data-menu-back>← Main Menu</button><h2 class="menu-section-title">Create a Buddy Read</h2><label for="groupName">Buddy read name</label><input id="groupName" maxlength="50" placeholder="e.g. Fantasy Friends"><label for="newPetName">Companion name (optional)</label><input id="newPetName" maxlength="18" placeholder="Reading Companion (default)"><h3 class="reader-question">What kind of reader are you?</h3><p class="hint" style="text-align:center">Choose a companion and its reading journey.</p><div id="speciesGrid"></div><div class="menu-preview" id="speciesPreview"><div class="preview-art" id="speciesPreviewArt"></div><h3 id="speciesPreviewName">Cat</h3><p class="muted">Your new reading companion</p></div><button type="button" id="createCompanion" class="menu-action">Create Buddy Read →</button><button type="button" id="cancelCreate" class="menu-action menu-secondary">Cancel</button><p id="createError" class="hint"></p></div>
 </section><main class="app" id="gameShell" hidden><button type="button" id="wcHubSettings" aria-label="Settings" title="Settings">⚙</button><header><div><small>YOUR SHARED ADVENTURE BEGINS</small><h1>🥚 Wheel Child</h1></div><span class="badge">Prototype v0.4.3</span></header>
@@ -765,4 +771,122 @@ document.addEventListener('click',e=>{if(e.target.closest('button'))clickSound()
 audio.addEventListener('error',()=>{status.textContent='Music not found in this preview. Upload the HTML to GitHub Pages with your audio file.'});
 sync();
 })();
-</script></body></html>
+</script>
+<script id="wcTitleAtmosphereScript">
+(()=>{
+  'use strict';
+  const canvas=document.getElementById('wcTitleAtmosphere');
+  const landing=document.getElementById('menuLanding');
+  if(!canvas||!landing)return;
+  const ctx=canvas.getContext('2d',{alpha:true});
+  if(!ctx)return;
+  const motion=window.matchMedia('(prefers-reduced-motion: reduce)');
+  // Coordinates follow the portrait title artwork (scaled to this logical canvas).
+  const W=545,H=958;
+  let w=0,h=0,raf=0,last=0,start=performance.now(),nextFlash=0,flashAt=-10000;
+  const rand=(a,b)=>a+Math.random()*(b-a);
+  const motes=Array.from({length:34},()=>({x:rand(18,525),y:rand(150,940),r:rand(1.05,2.15),v:rand(5,15),phase:rand(0,7),a:rand(.42,.82),drift:rand(7,19)}));
+  const embers=Array.from({length:13},()=>({x:rand(112,185),y:rand(70,180),r:rand(1.1,2.3),phase:rand(0,7),speed:rand(12,26)}));
+  function resize(){
+    const rect=landing.getBoundingClientRect();
+    if(!rect.width||!rect.height)return;
+    const dpr=Math.min(devicePixelRatio||1,2);
+    const cw=Math.round(rect.width*dpr),ch=Math.round(rect.height*dpr);
+    if(canvas.width!==cw||canvas.height!==ch){canvas.width=cw;canvas.height=ch;}
+    w=rect.width;h=rect.height;
+    ctx.setTransform(cw/W,0,0,ch/H,0,0);
+  }
+  function glow(x,y,r,color,alpha){
+    if(alpha<=0)return;
+    const g=ctx.createRadialGradient(x,y,0,x,y,r);
+    g.addColorStop(0,`rgba(${color},${Math.min(alpha,.98)})`);
+    g.addColorStop(.3,`rgba(${color},${alpha*.58})`);
+    g.addColorStop(1,`rgba(${color},0)`);
+    ctx.fillStyle=g;ctx.fillRect(x-r,y-r,r*2,r*2);
+  }
+  function ripple(x,y,t,rx,ry,alpha){
+    for(let i=0;i<4;i++){
+      const p=((t*.22+i/4)%1),r=.28+p*.98;
+      ctx.beginPath();ctx.ellipse(x,y,rx*r,ry*r,0,Math.PI*.08,Math.PI*.92);
+      ctx.strokeStyle=`rgba(151,246,255,${alpha*(1-p)*(.7+.3*Math.sin(t*2+i))})`;
+      ctx.lineWidth=1.15;ctx.stroke();
+    }
+  }
+  function frame(now){
+    raf=0;
+    if(motion.matches||landing.hidden||document.hidden||!landing.isConnected||getComputedStyle(landing).display==='none'||!document.body.contains(landing))return;
+    if(now-last<30){raf=requestAnimationFrame(frame);return;}
+    last=now;resize();if(!w||!h){raf=requestAnimationFrame(frame);return;}
+    const t=(now-start)/1000;
+    ctx.clearRect(0,0,W,H);
+    // Preserve the existing lightning timing, color, and placement exactly.
+    if(!nextFlash)nextFlash=now+rand(2500,6000);
+    if(now>=nextFlash){flashAt=now;nextFlash=now+rand(6000,13500);}
+    const age=now-flashAt;
+    let flash=0;
+    if(age>=0&&age<520){flash=age<85?.42*(1-age/85):age>170&&age<340?.62*(1-(age-170)/170):0;}
+    if(flash){glow(353,41,168,'178,135,255',flash*.8);glow(357,24,67,'236,219,255',flash*.42);}
+
+    // Leviathan: stronger breathing cyan aura and a moving pinpoint glint on its eye.
+    const eyePulse=.62+.38*(.5+.5*Math.sin(t*2.15));
+    glow(449,337,28,'18,225,255',.58*eyePulse);
+    glow(449,337,11,'43,246,255',.82*eyePulse);
+    glow(446+Math.sin(t*1.3)*2,334+Math.cos(t*1.1)*1.5,4.5,'235,255,255',.92);
+    // A faint secondary shimmer on the lower water-serpent silhouette.
+    glow(456,590,18,'20,220,255',.24*(.65+.35*Math.sin(t*1.4+1)));
+
+    // Otter pool: keep the animated rings below the otter, aligned with
+    // the painted water ripples rather than crossing the otter's body.
+    ripple(111,829,t,78,16,.48);
+    ripple(111,829,t+1.1,104,22,.29);
+    ripple(205,840,t+.55,48,10,.28);
+    // Broad lake reflections drift horizontally without covering the artwork.
+    for(let i=0;i<12;i++){
+      const y=746+i*17+Math.sin(t*.8+i)*3;
+      const x=((t*23+i*49)%590)-22;
+      const len=rand(10,25);
+      ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(x+len*.5,y-1.8,x+len,y+.4);
+      ctx.strokeStyle=`rgba(125,231,255,${.12+.15*(.5+.5*Math.sin(t*2+i))})`;
+      ctx.lineWidth=1.2;ctx.stroke();
+    }
+    // Waterfall animation intentionally removed; keep the painted cascades static.
+
+    // Phoenix: warm pulsing aura and rising, visibly glowing embers.
+    const fire=.5+.5*Math.sin(t*2.4);
+    glow(157,116,61,'255,105,18',.19+.12*fire);
+    glow(164,92,34,'255,190,63',.13+.12*fire);
+    for(const e of embers){
+      const phase=(t*e.speed/42+e.phase)%1;
+      const x=e.x+Math.sin(t*1.7+e.phase)*9;
+      const y=e.y-phase*88;
+      const a=(.35+.45*(.5+.5*Math.sin(t*3+e.phase)))*(1-phase*.45);
+      glow(x,y,e.r*5,'255,151,45',a*.75);
+      ctx.beginPath();ctx.arc(x,y,e.r,0,Math.PI*2);ctx.fillStyle=`rgba(255,221,145,${a})`;ctx.fill();
+    }
+
+    // Brighter fireflies drifting through the foliage and around the cottage.
+    for(const m of motes){
+      const yy=150+((m.y-150-t*m.v+2000)%790);
+      const xx=m.x+Math.sin(t*.75+m.phase)*m.drift;
+      const pulse=.55+.45*Math.sin(t*2.1+m.phase);
+      const a=m.a*pulse;
+      glow(xx,yy,m.r*7,'255,220,120',a*.72);
+      ctx.beginPath();ctx.arc(xx,yy,m.r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(255,241,190,${Math.min(.95,a)})`;ctx.fill();
+    }
+    raf=requestAnimationFrame(frame);
+  }
+  function startIfVisible(){
+    if(raf)cancelAnimationFrame(raf);raf=0;
+    if(!motion.matches&&!document.hidden)raf=requestAnimationFrame(frame);
+  }
+  const observer=new MutationObserver(startIfVisible);
+  observer.observe(landing,{attributes:true,attributeFilter:['hidden','style','class']});
+  observer.observe(document.body,{attributes:true,attributeFilter:['data-wc-screen']});
+  document.addEventListener('visibilitychange',startIfVisible);
+  if(motion.addEventListener)motion.addEventListener('change',startIfVisible);
+  window.addEventListener('resize',resize,{passive:true});
+  startIfVisible();
+})();
+</script>
+</body></html>
