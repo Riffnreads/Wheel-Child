@@ -1189,15 +1189,17 @@ const observer=new MutationObserver(()=>{if(document.body.dataset.wcSpecies==='o
 observer.observe(document.body,{childList:true,subtree:true});sync();
 })();</script>
 <style id="wc-otter-motion-style">
-body[data-wc-species="otter"] .stage #petPlaceholder img.wc-otter-model{animation:wcOtterBreathe 3.6s ease-in-out infinite;transform-origin:50% 85%;will-change:transform}
-body[data-wc-species="otter"] .stage #petPlaceholder img.wc-otter-model.wc-otter-reacting{animation:wcOtterReact .45s ease-in-out 1}
-@keyframes wcOtterBreathe{0%,100%{transform:translateY(0) rotate(-.5deg)}50%{transform:translateY(-5px) rotate(.5deg)}}
-@keyframes wcOtterReact{0%{transform:scale(1)}45%{transform:scale(1.045) translateY(-3px)}100%{transform:scale(1)}}
-@media(prefers-reduced-motion:reduce){body[data-wc-species="otter"] .stage #petPlaceholder img.wc-otter-model{animation:none!important}}
+/* The otter is stationary; only its PNG expressions change. */
+body[data-wc-species="otter"] .stage #petPlaceholder img.wc-otter-model,
+body[data-wc-species="otter"] .stage #petPlaceholder img.wc-otter-model.wc-otter-reacting {
+  animation:none!important;
+  transform:none!important;
+  transition:none!important;
+}
 </style>
 <script id="wc-otter-baby-interactions">(()=>{'use strict';
 const root='./assets/Creature_models/Baby_otter_';
-const sources={idle:root+'idle.png',blink:root+'blink.png',pet:root+'pet.png',feed:root+'feed.png',play:root+'wag.png'};
+const sources={idle:root+'idle.png',blink:root+'blink.png',pet:root+'pet.png',feed:root+'feed.png',play:root+'play.png'};
 Object.values(sources).forEach(src=>{const i=new Image();i.src=src});
 let blinkTimer=null,reactionTimer=null,settleTimer=null,token=0;
 function active(){return document.body.dataset.wcSpecies==='otter'&&document.body.dataset.wcScreen==='game'}
@@ -1205,8 +1207,8 @@ function sprite(){return document.querySelector('.stage #petPlaceholder img.wc-o
 function setPose(pose){const img=sprite();if(img&&active())img.src=sources[pose]||sources.idle}
 function clearTimers(){clearTimeout(blinkTimer);clearTimeout(reactionTimer);clearTimeout(settleTimer)}
 function scheduleBlink(){clearTimeout(blinkTimer);if(!active()||document.hidden)return;blinkTimer=setTimeout(()=>{if(!active())return;setPose('blink');settleTimer=setTimeout(()=>{setPose('idle');scheduleBlink()},190)},3000+Math.random()*3000)}
-function react(action){if(!active())return;token++;const myToken=token;clearTimers();const img=sprite();if(img)img.classList.add('wc-otter-reacting');setPose(action);
-reactionTimer=setTimeout(()=>{if(myToken!==token)return;setPose('blink');if(img)img.classList.remove('wc-otter-reacting');settleTimer=setTimeout(()=>{if(myToken!==token)return;setPose('idle');scheduleBlink()},180)},action==='feed'?1300:action==='pet'?1450:1600)}
+function react(action){if(!active())return;token++;const myToken=token;clearTimers();setPose(action);
+reactionTimer=setTimeout(()=>{if(myToken!==token)return;setPose('blink');settleTimer=setTimeout(()=>{if(myToken!==token)return;setPose('idle');scheduleBlink()},180)},action==='feed'?1300:action==='pet'?1450:1600)}
 for(const action of ['pet','feed','play']){const btn=document.getElementById(action);if(btn)btn.addEventListener('click',()=>react(action))}
 const observer=new MutationObserver(()=>{if(active()){if(!reactionTimer&&!settleTimer&&!blinkTimer)scheduleBlink()}else{token++;clearTimers();blinkTimer=reactionTimer=settleTimer=null}});
 observer.observe(document.body,{attributes:true,attributeFilter:['data-wc-species','data-wc-screen']});
