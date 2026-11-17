@@ -392,6 +392,18 @@ body[data-wc-screen="menu"] .menu-landing .menu-buttons .menu-action small{
 .wc-otter-portrait{width:100%;height:100%;max-height:125px;object-fit:contain;display:block}
 #speciesPreviewArt .wc-otter-model{height:220px;max-height:220px;width:100%;object-fit:contain}
 #wcWardrobePreview .wc-otter-model{max-height:215px;height:100%;width:100%;object-fit:contain}
+</style><style id="wc-otter-selection-layout-fix">
+/* Full-bleed Otter selection art; the artwork already contains its nameplate. */
+#createPanel #speciesGrid .species-choice:has(.wc-otter-portrait){padding:0!important;position:relative;overflow:hidden;aspect-ratio:1 / 1;min-height:0!important;display:block!important;border-radius:12px}
+#createPanel #speciesGrid .species-choice:has(.wc-otter-portrait) .wc-choice-portrait{visibility:visible!important;display:block!important;width:100%!important;height:100%!important;margin:0!important;overflow:hidden}
+#createPanel #speciesGrid .species-choice .wc-otter-portrait{display:block!important;width:100%!important;height:100%!important;max-height:none!important;object-fit:cover!important;object-position:center!important}
+#createPanel #speciesGrid .species-choice:has(.wc-otter-portrait) .wc-choice-label{display:none!important}
+/* Keep the stage-one pup above, not over, its preview description. */
+#createPanel #speciesPreview{display:flex!important;flex-direction:column;align-items:center;gap:8px;overflow:hidden}
+#createPanel #speciesPreviewArt{height:150px!important;min-height:150px!important;width:100%;display:flex!important;align-items:center;justify-content:center;overflow:hidden}
+#createPanel #speciesPreviewArt .wc-otter-model{display:block;position:static!important;width:auto!important;height:100%!important;max-height:150px!important;max-width:100%!important;object-fit:contain!important}
+#createPanel #speciesPreviewName{position:static!important;margin:2px 0 0!important;line-height:1.35}
+#createPanel #speciesPreview p{position:static!important;margin:0 0 4px!important}
 </style></head><body><section id="companionMenu" hidden><div class="wc-title-paint" aria-hidden="true"></div><div class="wc-eye-glow" aria-hidden="true"></div><div class="wc-water-ripple" aria-hidden="true"></div>
 <div class="wc-music-control" id="wcMusicControl"><button type="button" id="wcMusicToggle" aria-label="Settings" title="Settings"><svg class="wc-gear-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path class="wc-gear-teeth" fill="#ffdc8b" d="M13.2 2h5.6l.8 3.1a11.4 11.4 0 0 1 2.5 1l2.8-1.5 4 4-1.5 2.8a11.4 11.4 0 0 1 1 2.5l3.1.8v5.6l-3.1.8a11.4 11.4 0 0 1-1 2.5l1.5 2.8-4 4-2.8-1.5a11.4 11.4 0 0 1-2.5 1l-.8 3.1h-5.6l-.8-3.1a11.4 11.4 0 0 1-2.5-1l-2.8 1.5-4-4 1.5-2.8a11.4 11.4 0 0 1-1-2.5L.5 20.3v-5.6l3.1-.8a11.4 11.4 0 0 1 1-2.5L3.1 8.6l4-4 2.8 1.5a11.4 11.4 0 0 1 2.5-1L13.2 2Z" transform="translate(0 0)"/><circle cx="16" cy="16" r="5.2" fill="#43234f"/><circle cx="16" cy="16" r="2.5" fill="#ffdc8b"/></svg></button></div><audio id="wcTitleMusic" src="assets/audio/Enchanted%20Forest%20(1).mp3" preload="auto" loop></audio>
 <div class="wc-settings-overlay" id="wcSettingsOverlay" hidden><div class="wc-settings-panel" role="dialog" aria-modal="true" aria-labelledby="wcSettingsHeading"><h2 id="wcSettingsHeading">⚙ Settings</h2><label for="wcMusicVolume">🎵 Music Volume <span id="wcMusicPercent">50%</span></label><input id="wcMusicVolume" type="range" min="0" max="100" value="50"><label for="wcUiVolume">🔊 UI Volume <span id="wcUiPercent">60%</span></label><input id="wcUiVolume" type="range" min="0" max="100" value="60"><p id="wcMusicStatus" class="hint" role="status">Music starts after your first tap.</p><button type="button" class="small-btn" id="wcSettingsClose">Close</button></div></div>
