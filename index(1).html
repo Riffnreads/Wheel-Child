@@ -322,6 +322,44 @@ body[data-wc-screen="menu"] .menu-landing .menu-buttons .menu-action small{
   }
 }
 </style>
+
+<style id="wc-create-mobile-scroll-panel">
+/* Create Buddy Read: fixed library backdrop + independently scrolling framed panel. */
+@media (max-width: 600px) {
+  body:has(#createPanel:not([hidden])) { overflow: hidden; }
+  #createPanel {
+    position: fixed; inset: 0; z-index: 40;
+    width: 100vw; max-width: none; height: 100vh; height: 100dvh;
+    min-height: 0; margin: 0;
+    padding: max(22px, env(safe-area-inset-top)) 6vw max(88px, calc(72px + env(safe-area-inset-bottom)));
+    overflow-x: hidden; overflow-y: auto;
+    -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+    scrollbar-width: thin; scrollbar-color: #c49a55 rgba(35,18,48,.45);
+    background: transparent; box-sizing: border-box;
+  }
+  #createPanel::before {
+    position: fixed; inset: 0;
+    background: #160d24 url("assets/Backgrounds/Create-buddy-read.png") center center / cover no-repeat;
+  }
+  #createPanel::after {
+    position: fixed; inset: 9px; border-radius: 22px;
+    background: linear-gradient(155deg, rgba(43,19,60,.70), rgba(27,13,41,.74));
+    pointer-events: none;
+  }
+  #createPanel > * { position: relative; z-index: 1; }
+  #createPanel .menu-section-title, #createPanel .reader-question,
+  #createPanel .menu-back, #createPanel .menu-action { font-family: Georgia, 'Times New Roman', serif; }
+  /* Reserve the creature-art slots for the bespoke species illustrations planned next. */
+  #createPanel .species-choice span { visibility: hidden; }
+  /* Keep the settings control inside the framed viewport, clear of the scrolling content. */
+  #wcMusicControl {
+    position: fixed; z-index: 60;
+    right: max(22px, calc(env(safe-area-inset-right) + 14px));
+    bottom: max(22px, calc(env(safe-area-inset-bottom) + 14px));
+  }
+  #createPanel #createCompanion, #createPanel #cancelCreate { position: relative; z-index: 2; }
+}
+</style>
 </head><body><section id="companionMenu" hidden><div class="wc-title-paint" aria-hidden="true"></div><div class="wc-eye-glow" aria-hidden="true"></div><div class="wc-water-ripple" aria-hidden="true"></div>
 <div class="wc-music-control" id="wcMusicControl"><button type="button" id="wcMusicToggle" aria-label="Settings" title="Settings"><svg class="wc-gear-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 8.25a3.75 3.75 0 1 0 0 7.5 3.75 3.75 0 0 0 0-7.5Z"/><path d="M19.4 13.5a7.7 7.7 0 0 0 0-3l1.45-1.12-1.5-2.6-1.75.7a7.4 7.4 0 0 0-2.6-1.5L14.75 4h-3.0l-.27 1.98a7.4 7.4 0 0 0-2.6 1.5l-1.75-.7-1.5 2.6L7.08 10.5a7.7 7.7 0 0 0 0 3l-1.45 1.12 1.5 2.6 1.75-.7a7.4 7.4 0 0 0 2.6 1.5l.27 1.98h3l.27-1.98a7.4 7.4 0 0 0 2.6-1.5l1.75.7 1.5-2.6L19.4 13.5Z"/></svg></button></div><audio id="wcTitleMusic" src="assets/audio/Enchanted%20Forest%20(1).mp3" preload="auto" loop></audio>
 <div class="wc-settings-overlay" id="wcSettingsOverlay" hidden><div class="wc-settings-panel" role="dialog" aria-modal="true" aria-labelledby="wcSettingsHeading"><h2 id="wcSettingsHeading">⚙ Settings</h2><label for="wcMusicVolume">🎵 Music Volume <span id="wcMusicPercent">50%</span></label><input id="wcMusicVolume" type="range" min="0" max="100" value="50"><label for="wcUiVolume">🔊 UI Volume <span id="wcUiPercent">60%</span></label><input id="wcUiVolume" type="range" min="0" max="100" value="60"><p id="wcMusicStatus" class="hint" role="status">Music starts after your first tap.</p><button type="button" class="small-btn" id="wcSettingsClose">Close</button></div></div>
@@ -361,7 +399,7 @@ $('enterCompanion').onclick=()=>{if(selectedProfile)openProfile(selectedProfile)
 let pendingDelete=null;
 function resetDeleteButton(){pendingDelete=null;const b=$('deleteCompanion');b.textContent='Delete Buddy Read';b.setAttribute('aria-label','Delete selected buddy read')}
 $('deleteCompanion').onclick=()=>{const p=profiles.find(x=>x.id===selectedProfile);if(!p)return;if(pendingDelete!==p.id){pendingDelete=p.id;const b=$('deleteCompanion');b.textContent='⚠ Confirm Delete — Cannot Undo';b.setAttribute('aria-label','Confirm permanent deletion of '+p.group);return}resetDeleteButton();profiles=profiles.filter(x=>x.id!==p.id);localStorage.setItem(REG,JSON.stringify(profiles));if(active===p.id){localStorage.removeItem(ACTIVE);active=null}selectedProfile=null;$('existingPreview').hidden=true;drawMenu()};
-$('speciesGrid').replaceChildren();let chosen='cat';const difficultyGroups=[['🌱 Casual','2 / 4 points','cat','otter'],['⚔️ Standard','3 / 6 points','wolf','griffin'],['🔥 Battle-Hardened','3 / 5 / 8 points','dragon','phoenix'],['☠️ Mythic','5 / 10 / 15 points','leviathan']];function showSpeciesPreview(){$('speciesPreviewArt').innerHTML=creatureArt(chosen);const g=difficultyGroups.find(g=>g.includes(chosen));$('speciesPreviewName').textContent=species[chosen][0]+' · '+g[0]+' · '+g[1]+' to evolve'}
+$('speciesGrid').replaceChildren();let chosen='cat';const difficultyGroups=[['Casual','2 / 4 points','cat','otter'],['Standard','3 / 6 points','wolf','griffin'],['Battle-Hardened','3 / 5 / 8 points','dragon','phoenix'],['Mythic','5 / 10 / 15 points','leviathan']];function showSpeciesPreview(){$('speciesPreviewArt').innerHTML=creatureArt(chosen);const g=difficultyGroups.find(g=>g.includes(chosen));$('speciesPreviewName').textContent=species[chosen][0]+' · '+g[0]+' · '+g[1]+' to evolve'}
 for(const [label,requirement,...creatures] of difficultyGroups){const section=document.createElement('section');section.className='difficulty-section';const heading=document.createElement('div');heading.className='difficulty-heading';heading.textContent=label;const description=document.createElement('p');description.className='difficulty-description';description.textContent='Evolution milestones: '+requirement+' (cumulative)';const grid=document.createElement('div');grid.className='species-grid';for(const id of creatures){const [name,icon]=species[id];const b=document.createElement('button');b.type='button';b.className='species-choice';b.setAttribute('aria-pressed',String(id===chosen));b.innerHTML='<span>'+icon+'</span>'+name;b.addEventListener('click',()=>{chosen=id;document.querySelectorAll('.species-choice').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));showSpeciesPreview()});grid.append(b)}section.append(heading,description,grid);$('speciesGrid').append(section)}showSpeciesPreview();
 $('showCreate').onclick=()=>displayPanel('create');$('showExisting').onclick=()=>displayPanel('existing');$('cancelCreate').onclick=()=>displayPanel('landing');document.querySelectorAll('[data-menu-back]').forEach(b=>b.onclick=()=>displayPanel('landing'));$('showJoin').onclick=()=>{$('menuNotice').textContent='Invitations, friends and messages will arrive with multiplayer.'};
 $('createCompanion').onclick=()=>{const group=$('groupName').value.trim(),name=$('newPetName').value.trim().slice(0,18)||'Reading Companion';if(!group){$('createError').textContent='Enter a buddy read name to continue.';return}if(profiles.length>=10){$('createError').textContent='The prototype supports up to 10 active companions.';return}const id='pet-'+Date.now()+'-'+Math.random().toString(36).slice(2,7);profiles.push({id,group,name,species:chosen,data:{[DATA[0]]:JSON.stringify({companionName:name,title:'',page:0,total:400,progressMode:'pages',progressPercent:0,milestones:[],history:[],xp:0,books:0,tokens:0,rewardCycle:0,happiness:100,happinessUpdated:Date.now(),care:{},careHappiness:{}})}});localStorage.setItem(REG,JSON.stringify(profiles));openProfile(id)};
