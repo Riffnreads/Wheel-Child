@@ -1199,7 +1199,7 @@ body[data-wc-species="otter"] .stage #petPlaceholder img.wc-otter-model.wc-otter
 </style>
 <script id="wc-otter-baby-interactions">(()=>{'use strict';
 const root='./assets/Creature_models/Baby_otter_';
-const sources={idle:root+'idle.png',blink:root+'blink.png',pet:root+'pet.png',feed:root+'feed.png',play:root+'play.png'};
+const sources={idle:root+'idle.png',blink:root+'blink.png',pet:root+'pet.png',feed:root+'feed.png',play:root+'wag.png'};
 Object.values(sources).forEach(src=>{const i=new Image();i.src=src});
 let blinkTimer=null,reactionTimer=null,settleTimer=null,token=0;
 function active(){return document.body.dataset.wcSpecies==='otter'&&document.body.dataset.wcScreen==='game'}
