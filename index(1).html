@@ -1429,8 +1429,8 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 <style id="wc-griffin-art-style">
 body[data-wc-species="griffin"] .stage{background-image:linear-gradient(#130d2410,#130d2420),url('./assets/Backgrounds/Griffin-hatchling-environment.png')!important;background-size:cover!important;background-position:center 58%!important;overflow:hidden!important}
-body[data-wc-species="griffin"] .stage #petPlaceholder{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;min-height:0!important;box-sizing:border-box!important;display:flex!important;align-items:flex-end!important;justify-content:center!important;padding:0 0 6px!important}
-body[data-wc-species="griffin"] .stage #petPlaceholder img.wc-griffin-model{display:block!important;height:68%!important;max-height:195px!important;width:auto!important;max-width:75%!important;object-fit:contain!important;object-position:center bottom!important;transform:translateX(0)!important;filter:drop-shadow(0 7px 5px #120a1b77)!important}
+body[data-wc-species="griffin"] .stage #petPlaceholder{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;min-height:0!important;box-sizing:border-box!important;display:flex!important;align-items:flex-end!important;justify-content:center!important;padding:0 0 12%!important}
+body[data-wc-species="griffin"] .stage #petPlaceholder img.wc-griffin-model{display:block!important;height:64%!important;max-height:185px!important;width:auto!important;max-width:75%!important;object-fit:contain!important;object-position:center bottom!important;transform:translateX(0)!important;filter:drop-shadow(0 7px 5px #120a1b77)!important}
 </style>
 <script id="wc-griffin-asset-integration">
 (()=>{'use strict';
@@ -1461,4 +1461,10 @@ function init(){
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
 </script>
+
+<style id="wc-griffin-preview-fix-20261122">
+#createPanel #speciesPreview.wc-illustrated-preview #speciesPreviewArt:has(img[src*="Griffin-preview.png"]){display:block!important;width:100%!important;height:auto!important;min-height:0!important;overflow:visible!important}
+#createPanel #speciesPreviewArt img[src*="Griffin-preview.png"]{display:block!important;position:static!important;width:100%!important;height:auto!important;max-width:100%!important;max-height:none!important;opacity:1!important;visibility:visible!important;object-fit:contain!important}
+body[data-wc-species="griffin"] .stage #petPlaceholder{align-items:flex-end!important;padding-bottom:12%!important}
+</style>
 </body></html>
