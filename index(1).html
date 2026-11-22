@@ -601,9 +601,13 @@ let profiles=read(REG,null);if(!Array.isArray(profiles)){const existing=read(DAT
 let active=localStorage.getItem(ACTIVE);if(!profiles.some(p=>p.id===active)){active=null;localStorage.removeItem(ACTIVE)}
 function saveActive(){if(!active)return;const p=profiles.find(p=>p.id===active);if(!p)return;p.data=Object.fromEntries(DATA.map(k=>[k,localStorage.getItem(k)]));const state=read(DATA[0],{});if(state.companionName&&state.companionName!=='Reading Companion')p.name=state.companionName;localStorage.setItem(REG,JSON.stringify(profiles))}
 // Rebuild the prototype in-place: attachment previews often block full-page reloads.
-function refreshApp(){
- const markup=window.__wheelChildDocumentMarkup;
- if(markup){try{if(document.getElementById('wcAccountGate')?.hidden)sessionStorage.setItem('wc-auth-resuming','1')}catch(e){}document.open();document.write(markup);document.close();return}
+async function refreshApp(){
+ // A newly created/selected adventure must reach Firestore BEFORE reinitializing.
+ // Otherwise the auth loader can restore the previous snapshot and return to menu.
+ try{
+  if(typeof window.wcCloudSaveNow==='function') await window.wcCloudSaveNow();
+ }catch(error){console.error('Could not save adventure before opening',error);alert('Cloud save failed. Your adventure is still on this device. Please try again before switching devices.');return;}
+ try{sessionStorage.setItem('wc-auth-resuming','1')}catch(e){}
  window.location.reload();
 }
 window.addEventListener('DOMContentLoaded',()=>{
@@ -826,8 +830,17 @@ updateHappiness();persist();function renderHistory(){
   actions.append(edit,menu);li.append(title,meta,notes,readAll,actions,editor,options);list.append(li);
  });
 }
-function render(){try{const latest=JSON.parse(localStorage.getItem(KEY)||'null');if(latest&&typeof latest==='object'){const current=Number(s.happiness);const saved=Number(latest.happiness);if(Number.isFinite(saved)&&Number.isFinite(current)&&saved!==current){s.happiness=saved;s.happinessUpdated=latest.happinessUpdated||s.happinessUpdated}if(Number.isFinite(Number(latest.xp)))s.xp=Number(latest.xp);if(Number.isFinite(Number(latest.rewardCycle)))s.rewardCycle=Number(latest.rewardCycle);if(Number.isFinite(Number(latest.tokens)))s.tokens=Number(latest.tokens);}}catch{}const target=rewardTarget();$('xpText').textContent=`${s.xp} / ${target} XP · Next: ${tokenRewardForBar((Number(s.rewardCycle)||0)+1)} tokens`;$('xpFill').style.width=(100*s.xp/target)+'%';$('happyText').textContent=Math.round(s.happiness)+'%';$('happyFill').style.width=s.happiness+'%';$('tokensText').textContent=String(s.tokens||0);const difficulty=currentDifficulty(),stage=evolutionStage(),complete=stage>=difficulty.steps.length,next=complete?difficulty.steps[difficulty.steps.length-1]:difficulty.steps[stage];$('booksText').textContent=complete?`${evolutionCounter()} / ${next} reads · Complete`:`${evolutionCounter()} / ${next}${['dragon','phoenix','leviathan'].includes(document.body.dataset.wcSpecies)?' reads':''}`;$('bookCountNote').textContent=`📚 ${s.actualBooks??s.history.length} books completed · ${(s.history||[]).filter(book=>book.earned!==false).length} reward-eligible${Number(s.carryoverBooks)>0?' · '+s.carryoverBooks+' points saved for next companion':''}`;const stageName=difficulty.forms[stage]||difficulty.forms[0];$('speciesDisplay').textContent=stageName+' · Stage '+(stage+1);window.WheelChildArt?.renderCurrent();const pct=readingPercent();$('percent').textContent=(Math.round(pct*10)/10)+'%';$('readFill').style.width=pct+'%';const ready=Boolean(s.title.trim())&&readingPercent()>=100;$('finish').disabled=!ready;$('finishHint').textContent=ready?'✓ Reading progress saved at 100%. Ready to archive!':'Reach 100% and save your reading progress to unlock archiving.';for(const [id,label] of [['pet','❤️ Pet'],['feed','🍎 Feed'],['play','🧶 Play']]){const rule=WC_CARE[id],now=Date.now(),last=Number(s.care?.[id])||0,remaining=Math.max(0,rule.ms-(now-last));const player=wcCareGroupSize();const happy=rule.happy[player-1];const personId=wcCareParticipant();const personalLast=Number(s.careHappiness?.[id+':'+personId])||0;const happyRemaining=Math.max(0,rule.ms-(now-personalLast));const xpReady=remaining===0,happyReady=happyRemaining===0;const button=$(id);button.disabled=false;button.innerHTML='<span class="wc-care-name">'+label+'</span>'+(xpReady?'<span class="wc-care-reward">+'+rule.xp+' XP</span>':'')+(happyReady?'<span class="wc-care-reward">+'+happy+'% Happiness</span>':'');let status=document.getElementById('wc-care-status-'+id);if(!status){status=document.createElement('div');status.id='wc-care-status-'+id;status.className='wc-care-status';button.after(status)}status.innerHTML=(xpReady?'':'<span>XP refresh in '+wcCareTime(remaining)+'</span>')+(happyReady?'':'<span>Happiness refresh in '+wcCareTime(happyRemaining)+'</span>');}wcSyncBuddySelector();renderHistory();syncDebugStats();$('evolution').textContent=complete?'✨ '+stageName+' — final evolution unlocked!':(Math.round((next-evolutionCounter())*10)/10)+(['dragon','phoenix','leviathan'].includes(document.body.dataset.wcSpecies)?' more completed '+(next-evolutionCounter()===1?'read':'reads')+' until '+difficulty.forms[Math.min(stage+1,difficulty.forms.length-1)]+'.':' more evolution '+(Math.abs(next-evolutionCounter())===1?'point':'points')+' needed to evolve '+difficulty.forms[Math.min(stage+1,difficulty.forms.length-1)]+'.')}function wcCareGroupSize(){return document.body.dataset.wcSolo==='true'?1:Math.max(2,Math.min(4,Number(s.wcCareGroupSize)||2))}
+function render(){try{const latest=JSON.parse(localStorage.getItem(KEY)||'null');if(latest&&typeof latest==='object'){const current=Number(s.happiness);const saved=Number(latest.happiness);if(Number.isFinite(saved)&&Number.isFinite(current)&&saved!==current){s.happiness=saved;s.happinessUpdated=latest.happinessUpdated||s.happinessUpdated}if(Number.isFinite(Number(latest.xp)))s.xp=Number(latest.xp);if(Number.isFinite(Number(latest.rewardCycle)))s.rewardCycle=Number(latest.rewardCycle);if(Number.isFinite(Number(latest.tokens)))s.tokens=Number(latest.tokens);}}catch{}const target=rewardTarget();$('xpText').textContent=`${s.xp} / ${target} XP · Next: ${tokenRewardForBar((Number(s.rewardCycle)||0)+1)} tokens`;$('xpFill').style.width=(100*s.xp/target)+'%';$('happyText').textContent=Math.round(s.happiness)+'%';$('happyFill').style.width=s.happiness+'%';$('tokensText').textContent=String(s.tokens||0);const difficulty=currentDifficulty(),stage=evolutionStage(),complete=stage>=difficulty.steps.length,next=complete?difficulty.steps[difficulty.steps.length-1]:difficulty.steps[stage];$('booksText').textContent=complete?`${evolutionCounter()} / ${next} reads · Complete`:`${evolutionCounter()} / ${next}${['dragon','phoenix','leviathan'].includes(document.body.dataset.wcSpecies)?' reads':''}`;$('bookCountNote').textContent=`📚 ${s.actualBooks??s.history.length} books completed · ${(s.history||[]).filter(book=>book.earned!==false).length} reward-eligible${Number(s.carryoverBooks)>0?' · '+s.carryoverBooks+' points saved for next companion':''}`;const stageName=difficulty.forms[stage]||difficulty.forms[0];$('speciesDisplay').textContent=stageName+' · Stage '+(stage+1);window.WheelChildArt?.renderCurrent();const pct=readingPercent();$('percent').textContent=(Math.round(pct*10)/10)+'%';$('readFill').style.width=pct+'%';const ready=Boolean(s.title.trim())&&readingPercent()>=100;$('finish').disabled=!ready;$('finishHint').textContent=ready?'✓ Reading progress saved at 100%. Ready to archive!':'Reach 100% and save your reading progress to unlock archiving.';for(const [id,label] of [['pet','❤️ Pet'],['feed','🍎 Feed'],['play','🧶 Play']]){const rule=WC_CARE[id],now=Date.now(),last=wcCareLatest(wcCareLatestXP,id,s.care?.[id]),remaining=Math.max(0,rule.ms-(now-last));const player=wcCareGroupSize();const happy=rule.happy[player-1];const personId=wcCareParticipant();const personalLast=wcCareLatest(wcCareLatestHappy,id+':'+personId,s.careHappiness?.[id+':'+personId]);const happyRemaining=Math.max(0,rule.ms-(now-personalLast));const xpReady=remaining===0,happyReady=happyRemaining===0;const button=$(id);button.disabled=false;button.innerHTML='<span class="wc-care-name">'+label+'</span>'+(xpReady?'<span class="wc-care-reward">+'+rule.xp+' XP</span>':'')+(happyReady?'<span class="wc-care-reward">+'+happy+'% Happiness</span>':'');let status=document.getElementById('wc-care-status-'+id);if(!status){status=document.createElement('div');status.id='wc-care-status-'+id;status.className='wc-care-status';button.after(status)}status.innerHTML=(xpReady?'':'<span>XP refresh in '+wcCareTime(remaining)+'</span>')+(happyReady?'':'<span>Happiness refresh in '+wcCareTime(happyRemaining)+'</span>');}wcSyncBuddySelector();renderHistory();syncDebugStats();$('evolution').textContent=complete?'✨ '+stageName+' — final evolution unlocked!':(Math.round((next-evolutionCounter())*10)/10)+(['dragon','phoenix','leviathan'].includes(document.body.dataset.wcSpecies)?' more completed '+(next-evolutionCounter()===1?'read':'reads')+' until '+difficulty.forms[Math.min(stage+1,difficulty.forms.length-1)]+'.':' more evolution '+(Math.abs(next-evolutionCounter())===1?'point':'points')+' needed to evolve '+difficulty.forms[Math.min(stage+1,difficulty.forms.length-1)]+'.')}function wcCareGroupSize(){return document.body.dataset.wcSolo==='true'?1:Math.max(2,Math.min(4,Number(s.wcCareGroupSize)||2))}
 function wcCareParticipant(){return 'buddy'+(Number(s.wcCareParticipant)||1)}
+// Keep the newest interaction timestamps in memory so delayed cloud/local refreshes
+// cannot briefly make a reward appear available again during an active cooldown.
+const wcCareLatestXP=Object.create(null);
+const wcCareLatestHappy=Object.create(null);
+function wcCareLatest(store,key,value){
+ const stamp=Number(value)||0;
+ store[key]=Math.max(store[key]||0,stamp);
+ return store[key];
+}
 function wcCareTime(ms){const m=Math.ceil(ms/60000);return Math.floor(m/60)+'h '+String(m%60).padStart(2,'0')+'m'}
 const wcBuddySelector=$('wcTestBuddy');
 function wcSyncBuddySelector(){const solo=document.body.dataset.wcSolo==='true';$('wcTestBuddyBox').hidden=solo;const count=wcCareGroupSize();$('wcTestGroupSize').value=String(solo?2:count);for(const option of wcBuddySelector.options)option.disabled=solo||Number(option.value)>count;const current=solo?1:Math.min(count,Math.max(1,Number(s.wcCareParticipant)||1));s.wcCareParticipant=current;wcBuddySelector.value=String(current);}
@@ -837,8 +850,8 @@ function wcRefreshCareCountdowns(){
  const now=Date.now(),groupSize=wcCareGroupSize(),participant=wcCareParticipant();
  for(const id of ['pet','play','feed']){
   const rule=WC_CARE[id],button=$(id);if(!button)continue;
-  const xpRemaining=Math.max(0,rule.ms-(now-(Number(s.care?.[id])||0)));
-  const happyRemaining=Math.max(0,rule.ms-(now-(Number(s.careHappiness?.[id+':'+participant])||0)));
+  const xpRemaining=Math.max(0,rule.ms-(now-wcCareLatest(wcCareLatestXP,id,s.care?.[id])));
+  const happyRemaining=Math.max(0,rule.ms-(now-wcCareLatest(wcCareLatestHappy,id+':'+participant,s.careHappiness?.[id+':'+participant])));
   const xpReady=xpRemaining===0,happyReady=happyRemaining===0;
   const label={pet:'❤️ Pet',play:'🧶 Play',feed:'🍎 Feed'}[id];
   const markup='<span class="wc-care-name">'+label+'</span>'+(xpReady?'<span class="wc-care-reward">+'+rule.xp+' XP</span>':'')+(happyReady?'<span class="wc-care-reward">+'+rule.happy[groupSize-1]+'% Happiness</span>':'');
@@ -851,7 +864,7 @@ function wcRefreshCareCountdowns(){
 }
 setInterval(wcRefreshCareCountdowns,15000);
 wcBuddySelector.addEventListener('change',()=>{s.wcCareParticipant=Number(wcBuddySelector.value);persist();render()});$('wcTestGroupSize').addEventListener('change',()=>{if(document.body.dataset.wcSolo==='true')return;s.wcCareGroupSize=Math.max(2,Math.min(4,Number($('wcTestGroupSize').value)||2));s.wcCareParticipant=Math.min(Number(s.wcCareParticipant)||1,s.wcCareGroupSize);persist();render()});
-for(const id of ['pet','feed','play'])$(id).addEventListener('click',()=>{updateHappiness();const rule=WC_CARE[id],now=Date.now(),groupSize=wcCareGroupSize();const last=Number(s.care?.[id])||0;const canXP=now-last>=rule.ms;const personId=wcCareParticipant();s.careHappiness=s.careHappiness||{};const personalKey=id+':'+personId;const personalLast=Number(s.careHappiness[personalKey])||0;const canHappy=now-personalLast>=rule.ms;const before=s.happiness;if(canHappy){s.happiness=Math.min(100,s.happiness+rule.happy[groupSize-1]);s.careHappiness[personalKey]=now}let tokens=0;if(canXP){s.care[id]=now;tokens=awardXP(rule.xp)}persist();render();say('Your companion loved that!'+(canXP?' +'+rule.xp+' XP':'')+(canHappy?' +'+Math.round((s.happiness-before)*10)/10+' happiness':'')+(tokens?' +'+tokens+' tokens!':'')+(!canXP&&!canHappy?' Come back after the cooldown for more rewards.':''))});$('title').value=s.title;$('page').value=s.page;$('total').value=s.total;$('readWith').value=s.readWith||'';$('progressMode').value=s.progressMode==='percent'?'percent':'pages';$('progressInput').value=String(s.progressPercent??0);function readingPercent(){return s.progressMode==='percent'?Math.max(0,Math.min(100,Number(s.progressPercent)||0)):s.total>0?Math.min(100,100*s.page/s.total):0}function setProgressFields(){const byPercent=$('progressMode').value==='percent';$('pagesFields').hidden=byPercent;$('percentFields').hidden=!byPercent}setProgressFields();$('progressMode').addEventListener('change',()=>{if($('progressMode').value==='percent'&&s.progressMode==='pages')$('progressInput').value=String(Math.round(readingPercent()*10)/10);if($('progressMode').value==='pages'&&s.progressMode==='percent'&&Number($('total').value)>0)$('page').value=String(Math.round(Number($('progressInput').value)*Number($('total').value)/100));setProgressFields();updateDirty()});$('title').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('saveBook').click()}});
+for(const id of ['pet','feed','play'])$(id).addEventListener('click',()=>{updateHappiness();const rule=WC_CARE[id],now=Date.now(),groupSize=wcCareGroupSize();const last=wcCareLatest(wcCareLatestXP,id,s.care?.[id]);const canXP=now-last>=rule.ms;const personId=wcCareParticipant();s.careHappiness=s.careHappiness||{};const personalKey=id+':'+personId;const personalLast=wcCareLatest(wcCareLatestHappy,personalKey,s.careHappiness[personalKey]);const canHappy=now-personalLast>=rule.ms;const before=s.happiness;if(canHappy){s.happiness=Math.min(100,s.happiness+rule.happy[groupSize-1]);s.careHappiness[personalKey]=now;wcCareLatestHappy[personalKey]=now}let tokens=0;if(canXP){s.care[id]=now;wcCareLatestXP[id]=now;tokens=awardXP(rule.xp)}persist();render();say('Your companion loved that!'+(canXP?' +'+rule.xp+' XP':'')+(canHappy?' +'+Math.round((s.happiness-before)*10)/10+' happiness':'')+(tokens?' +'+tokens+' tokens!':'')+(!canXP&&!canHappy?' Come back after the cooldown for more rewards.':''))});$('title').value=s.title;$('page').value=s.page;$('total').value=s.total;$('readWith').value=s.readWith||'';$('progressMode').value=s.progressMode==='percent'?'percent':'pages';$('progressInput').value=String(s.progressPercent??0);function readingPercent(){return s.progressMode==='percent'?Math.max(0,Math.min(100,Number(s.progressPercent)||0)):s.total>0?Math.min(100,100*s.page/s.total):0}function setProgressFields(){const byPercent=$('progressMode').value==='percent';$('pagesFields').hidden=byPercent;$('percentFields').hidden=!byPercent}setProgressFields();$('progressMode').addEventListener('change',()=>{if($('progressMode').value==='percent'&&s.progressMode==='pages')$('progressInput').value=String(Math.round(readingPercent()*10)/10);if($('progressMode').value==='pages'&&s.progressMode==='percent'&&Number($('total').value)>0)$('page').value=String(Math.round(Number($('progressInput').value)*Number($('total').value)/100));setProgressFields();updateDirty()});$('title').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('saveBook').click()}});
 // Starting a book is a separate flow; progress edits on an existing book stay inline.
 let pendingWheelStart=null;
 const startDialog=document.createElement('dialog');startDialog.id='wcBookStartDialog';
@@ -1713,6 +1726,16 @@ $('wcAuthReset').onclick=async()=>{const email=$('wcAuthEmail').value.trim();if(
 $('wcCloudSignOut').onclick=async()=>{await flush();ready=false;await signOut(auth);restore(emptySnapshot());sessionStorage.clear();location.reload()};
 $('wcCloudProfile').onclick=()=>window.wcOpenProfile?.();window.wcAccountActions={signOut:()=> $('wcCloudSignOut')?.onclick?.() || wcSignOutDirect(),getUser:()=>({username:$('wcSignedInAs').dataset.username||user?.displayName||'Reader',email:user?.email||'',provider:user?.providerData?.[0]?.providerId||'',created:user?.metadata?.creationTime||''})};async function wcSignOutDirect(){await flush();ready=false;await signOut(auth);restore(emptySnapshot());sessionStorage.clear();location.reload()};window.wcUpdateAccountUsername=async value=>{if(!user)throw Error('Sign in first');if(!/^[a-zA-Z0-9_]{3,24}$/.test(value))throw Error('Use 3–24 letters, numbers, or underscores');await setDoc(doc(db,'users',user.uid),{username:value},{merge:true});await updateProfile(user,{displayName:value});$('wcSignedInAs').dataset.username=value;$('wcSignedInAs').textContent='Signed in as: '+value;return value}
 async function flush(){if(!ready||!user||writing)return;const snapshot=localSnapshot(),serialized=JSON.stringify(snapshot);if(serialized===lastSerialized)return;writing=true;try{await setDoc(doc(db,'users',user.uid,'adventures','main'),{snapshot,updatedAt:serverTimestamp()});lastSerialized=serialized;status.textContent=''}catch(e){console.error('Wheel Child cloud save failed',e);status.textContent='Cloud save failed. Your browser copy is still available.'}finally{writing=false}}
+// Expose an awaited cloud write for navigation that reloads the game shell.
+window.wcCloudSaveNow=async()=>{
+ if(!user||!ready)throw Error('Account is not ready for cloud saving.');
+ // Wait for an in-flight autosave before writing the newest snapshot.
+ for(let i=0;writing&&i<100;i++)await new Promise(r=>setTimeout(r,50));
+ if(writing)throw Error('Cloud save is still in progress.');
+ const snapshot=localSnapshot(),serialized=JSON.stringify(snapshot);
+ await setDoc(doc(db,'users',user.uid,'adventures','main'),{snapshot,updatedAt:serverTimestamp()});
+ lastSerialized=serialized;
+};
 function begin(){ready=true;gate.hidden=true;document.documentElement.classList.remove('wc-auth-resuming');$('wcCloudToolbar').hidden=false;lastSerialized=JSON.stringify(localSnapshot());if(timer)clearInterval(timer);timer=setInterval(flush,3500);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')flush()});}
 const emptySnapshot=()=>Object.fromEntries([REG,ACTIVE,...DATA].map(k=>[k,k===REG?'[]':null]));
 // Device data is only a working cache. Firestore is always the source of truth.
@@ -1840,4 +1863,43 @@ body[data-wc-screen="game"] #wcHubSettings {display:flex!important;align-items:c
 #wcMusicControl{pointer-events:auto!important}
 #wcHubSettings[hidden],#wcMusicControl[hidden]{display:none!important}
 #wcSettingsOverlay:not([hidden]){z-index:30000!important;pointer-events:auto!important}
-</style></body></html>
+</style><script id="wc-gear-standalone-fix">
+(()=>{
+ const overlay=document.getElementById('wcSettingsOverlay');
+ const old=document.getElementById('wcHubSettings');
+ if(!overlay||!old)return;
+ // Existing hub button is moved to body by the navigation controller above.
+ // Use that one button, not a clone with competing click listeners.
+ const gear=document.createElement('button');
+ gear.type='button';gear.id='wcAdventureSettingsFixed';
+ gear.setAttribute('aria-label','Open settings');gear.title='Settings';
+ gear.innerHTML=old.innerHTML;
+ document.body.appendChild(gear);
+ old.hidden=true;old.style.setProperty('display','none','important');
+ const show=e=>{
+  e.preventDefault();e.stopPropagation();
+  document.body.appendChild(overlay);
+  overlay.hidden=false;
+  overlay.style.setProperty('display','grid','important');
+  overlay.style.setProperty('z-index','2147483647','important');
+ };
+ gear.addEventListener('click',show);
+ const close=()=>{overlay.hidden=true;overlay.style.removeProperty('display')};
+ document.getElementById('wcSettingsClose')?.addEventListener('click',close);
+ overlay.addEventListener('click',e=>{if(e.target===overlay)close()});
+ const sync=()=>{
+  const active=document.body.dataset.wcScreen==='game'&&!document.getElementById('gameShell')?.hidden;
+  gear.hidden=!active;gear.style.setProperty('display',active?'flex':'none','important');
+ };
+ new MutationObserver(sync).observe(document.body,{attributes:true,attributeFilter:['data-wc-screen']});
+ const shell=document.getElementById('gameShell');if(shell)new MutationObserver(sync).observe(shell,{attributes:true,attributeFilter:['hidden']});
+ sync();
+})();
+</script>
+<style id="wc-gear-standalone-css">
+#wcAdventureSettingsFixed{position:fixed!important;right:max(16px,env(safe-area-inset-right))!important;bottom:max(18px,env(safe-area-inset-bottom))!important;left:auto!important;top:auto!important;z-index:2147483000!important;width:52px!important;height:52px!important;display:flex;align-items:center!important;justify-content:center!important;padding:0!important;cursor:pointer!important;pointer-events:auto!important;touch-action:manipulation!important;transform:none!important;visibility:visible!important;opacity:1!important}
+#wcAdventureSettingsFixed[hidden]{display:none!important}
+#wcAdventureSettingsFixed .wc-gear-icon{width:28px!important;height:28px!important;display:block!important;margin:auto!important}
+#wcSettingsOverlay[hidden]{display:none!important}
+</style>
+</body></html>
