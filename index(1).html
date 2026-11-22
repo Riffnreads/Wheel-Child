@@ -1467,4 +1467,41 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 #createPanel #speciesPreviewArt img[src*="Griffin-preview.png"]{display:block!important;position:static!important;width:100%!important;height:auto!important;max-width:100%!important;max-height:none!important;opacity:1!important;visibility:visible!important;object-fit:contain!important}
 body[data-wc-species="griffin"] .stage #petPlaceholder{align-items:flex-end!important;padding-bottom:12%!important}
 </style>
+
+<style id="wc-mobile-companion-stage-fit-20261122">
+/* Mobile-first stage compositing: size against the scene, not intrinsic PNG dimensions. */
+@media (max-width: 600px) {
+ body[data-wc-species="otter"] .stage:has(img.wc-otter-model) #petPlaceholder,
+ body[data-wc-species="cat"] .stage:has(img.wc-cat-model[src*="Kitten-Idle"]) #petPlaceholder,
+ body[data-wc-species="griffin"] .stage #petPlaceholder {
+   position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
+   min-height:0!important;box-sizing:border-box!important;display:flex!important;
+   justify-content:center!important;align-items:flex-end!important;overflow:hidden!important;
+   pointer-events:none!important;
+ }
+ /* Pup's paws belong on the center stone, not in the foreground grass. */
+ body[data-wc-species="otter"] .stage:has(img.wc-otter-model:not(.wc-riverguard-model)) #petPlaceholder {
+   padding:0 0 15%!important;
+ }
+ body[data-wc-species="otter"] .stage #petPlaceholder img.wc-otter-model:not(.wc-riverguard-model) {
+   display:block!important;width:auto!important;height:58%!important;max-height:none!important;
+   max-width:62%!important;object-fit:contain!important;object-position:center bottom!important;
+   margin:0!important;transform:none!important;animation:none!important;
+ }
+ /* Hatchling feet rest on the broad central ledge. */
+ body[data-wc-species="griffin"] .stage #petPlaceholder {padding:0 0 17%!important;}
+ body[data-wc-species="griffin"] .stage #petPlaceholder img.wc-griffin-model {
+   height:57%!important;max-height:none!important;max-width:63%!important;width:auto!important;
+   object-fit:contain!important;object-position:center bottom!important;margin:0!important;
+ }
+ /* Kitten centered on the round rug with a little more breathing room. */
+ body[data-wc-species="cat"] .stage:has(img.wc-cat-model[src*="Kitten-Idle"]) #petPlaceholder {padding:0 0 9%!important;}
+ body[data-wc-species="cat"] .stage:has(img.wc-cat-model[src*="Kitten-Idle"]) #petPlaceholder img.wc-cat-model {
+   height:65%!important;max-height:none!important;max-width:65%!important;width:auto!important;
+   object-fit:contain!important;object-position:center bottom!important;margin:0!important;
+ }
+ /* Keep UI controls above the art layer. */
+ .stage #creatureCollectionControls,.stage #companionEditOpen {pointer-events:auto!important;}
+}
+</style>
 </body></html>
