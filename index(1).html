@@ -1768,7 +1768,7 @@ onAuthStateChanged(auth,async u=>{if(!u){document.documentElement.classList.remo
   closeSettings();const u=window.wcAccountActions?.getUser?.()||{};
   el('wcProfileName').textContent=u.username||'Reader';
   const detail=el('wcProfileInfo');detail.replaceChildren();
-  for(const [label,value] of [['Email',u.email||'Not available'],['Sign-in method',u.provider==='google.com'?'Google':u.provider==='password'?'Email & Password':u.provider||'Account'],['Member since',u.created?new Date(u.created).toLocaleDateString():'Not available']]){const row=document.createElement('div');const strong=document.createElement('strong');strong.textContent=label+': ';row.append(strong,document.createTextNode(value));detail.append(row)}
+  for(const [label,value] of [['Email',u.email||'Not available'],['Member since',u.created?new Date(u.created).toLocaleDateString():'Not available']]){const row=document.createElement('div');const strong=document.createElement('strong');strong.textContent=label+': ';row.append(strong,document.createTextNode(value));detail.append(row)}
   const st=stats();el('wcProfileSolo').textContent=st.solo;el('wcProfileBuddy').textContent=st.buddy;el('wcProfileCompanions').textContent=st.companions;el('wcProfileBooks').textContent=st.books;
   el('wcProfileFeedback').textContent='';profile.hidden=false;
  };
@@ -1799,29 +1799,45 @@ body[data-wc-screen="game"] #wcHubSettings {display:flex!important;align-items:c
 </style>
 <script id="wc-settings-navigation-repair">
 (()=>{
- const hub=document.getElementById('wcHubSettings');
- const menu=document.getElementById('wcMusicControl');
- const overlay=document.getElementById('wcSettingsOverlay');
- const home=document.getElementById('returnMenu');
- if(!hub||!menu||!overlay)return;
- // Escape the adventure layout's stacking/overflow context so the cog is always tappable.
- document.body.appendChild(hub);
- document.body.appendChild(menu);
- const open=event=>{
-   event.preventDefault();event.stopImmediatePropagation();
-   overlay.hidden=false;
-   document.getElementById('wcSettingsClose')?.focus({preventScroll:true});
- };
- // Capture-phase handler avoids relying on page-specific or overlapping click handlers.
- hub.addEventListener('click',open,true);
- document.getElementById('wcMusicToggle')?.addEventListener('click',open,true);
- if(home){
-   home.addEventListener('click',event=>{
-     // Returning to the title screen must never open settings as a side effect.
-     overlay.hidden=true;
-     event.stopPropagation();
-   },true);
- }
+  'use strict';
+  const hub=document.getElementById('wcHubSettings');
+  const menu=document.getElementById('wcMusicControl');
+  const titleButton=document.getElementById('wcMusicToggle');
+  const overlay=document.getElementById('wcSettingsOverlay');
+  const home=document.getElementById('returnMenu');
+  if(!hub||!menu||!titleButton||!overlay)return;
+  // Put controls outside adventure/menu containers with their own stacking contexts.
+  // Overlays must live at body level: companionMenu is hidden in the Adventure Hub.
+  // Otherwise the settings state changes but the dialog remains invisible.
+  document.body.append(hub,menu);
+  document.body.append(overlay);
+  const profileOverlay=document.getElementById('wcProfileOverlay');
+  if(profileOverlay)document.body.append(profileOverlay);
+  function sync(){
+    const inGame=document.body.dataset.wcScreen==='game';
+    hub.hidden=!inGame;
+    menu.hidden=inGame;
+    hub.style.setProperty('display',inGame?'flex':'none','important');
+    menu.style.setProperty('display',inGame?'none':'flex','important');
+  }
+  function openSettings(e){
+    e.preventDefault();e.stopImmediatePropagation();
+    overlay.hidden=false;
+    document.getElementById('wcSettingsClose')?.focus({preventScroll:true});
+  }
+  // Capture prevents old page-level click handlers from stealing settings clicks.
+  for(const button of [hub,titleButton])button.addEventListener('click',openSettings,true);
+  if(home)home.addEventListener('click',()=>{overlay.hidden=true},true);
+  document.getElementById('wcSettingsClose')?.addEventListener('click',()=>{overlay.hidden=true});
+  overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.hidden=true});
+  new MutationObserver(sync).observe(document.body,{attributes:true,attributeFilter:['data-wc-screen']});
+  sync();
 })();
 </script>
-</body></html>
+<style id="wc-settings-clickability-final">
+#wcHubSettings,#wcMusicControl{position:fixed!important;top:auto!important;left:auto!important;right:max(16px,env(safe-area-inset-right))!important;bottom:max(18px,env(safe-area-inset-bottom))!important;z-index:25000!important;transform:none!important;pointer-events:auto!important;visibility:visible!important;opacity:1!important}
+#wcHubSettings,#wcMusicToggle{cursor:pointer!important;pointer-events:auto!important;touch-action:manipulation!important}
+#wcMusicControl{pointer-events:auto!important}
+#wcHubSettings[hidden],#wcMusicControl[hidden]{display:none!important}
+#wcSettingsOverlay:not([hidden]){z-index:30000!important;pointer-events:auto!important}
+</style></body></html>
