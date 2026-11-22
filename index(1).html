@@ -482,11 +482,14 @@ body[data-wc-adventure-backdrop="buddy"] #existingPanel:not([hidden])::before {
 </style>
 <style id="wc-save-pagination-style">#wcSavePagination{display:flex;justify-content:center;align-items:center;gap:12px;margin:20px auto 6px;position:relative;z-index:2}#wcSavePagination .wc-save-page-button{font:inherit;font-weight:700;cursor:pointer;color:#f5dbad;background:linear-gradient(150deg,#452659,#261633);border:1px solid rgba(231,188,105,.7);border-radius:12px;padding:10px 18px;min-width:100px;box-shadow:0 3px 12px #10081b66}#wcSavePagination .wc-save-page-button[aria-current="true"]{background:linear-gradient(150deg,#886035,#54365a);border-color:#f4d497;cursor:default;opacity:1}#wcSavePagination .wc-save-page-button:focus-visible{outline:3px solid #f4d497;outline-offset:3px}</style>
 <style id="wc-mobile-save-preview-position-20261122">
-/* Keep saved-adventure hatchlings grounded in their scene on narrow mobile screens. */
+/* Adjust only the separate hatchling model layers in saved-adventure previews.
+   The background image stays fixed; other species and stages are untouched. */
 @media (max-width: 600px){
-  #existingPreview .wc-save-scene[data-stage="0"][data-species="dragon"] img,
-  #existingPreview .wc-save-scene[data-stage="0"][data-species="phoenix"] img{
-    transform:translateY(12px);
+  #existingPreview .wc-save-scene[data-stage="0"][data-species="dragon"] > img{
+    transform:translateY(38px);
+  }
+  #existingPreview .wc-save-scene[data-stage="0"][data-species="phoenix"] > img{
+    transform:translateY(38px);
   }
 }
 </style>
