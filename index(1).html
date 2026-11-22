@@ -1780,4 +1780,48 @@ onAuthStateChanged(auth,async u=>{if(!u){document.documentElement.classList.remo
  el('wcProfileEditName').addEventListener('click',async()=>{const current=window.wcAccountActions?.getUser?.().username||'';const value=prompt('Choose a username (3–24 letters, numbers, or underscores):',current);if(value===null||value.trim()===current)return;const feedback=el('wcProfileFeedback');feedback.textContent='Saving username…';try{const updated=await window.wcUpdateAccountUsername(value.trim());el('wcProfileName').textContent=updated;feedback.textContent='Username updated successfully.'}catch(err){feedback.textContent=err.message||'Unable to update username.'}});
  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!profile.hidden)profile.hidden=true});
 })();
-</script></body></html>
+</script><style id="wc-unified-settings-position">
+/* A single viewport-anchored control on every screen, independent of page layout. */
+#wcMusicControl, #wcHubSettings {
+ position:fixed!important; left:auto!important; top:auto!important;
+ right:max(16px, env(safe-area-inset-right))!important;
+ bottom:max(18px, env(safe-area-inset-bottom))!important;
+ margin:0!important; transform:none!important; z-index:900!important;
+}
+#wcMusicControl {width:52px!important;height:52px!important;display:flex!important;align-items:center!important;justify-content:center!important;pointer-events:none!important}
+#wcMusicToggle {width:52px!important;height:52px!important;pointer-events:auto!important}
+#wcHubSettings {width:52px!important;height:52px!important}
+body[data-wc-screen="game"] #wcMusicControl, body:not([data-wc-screen="game"]) #wcHubSettings {display:none!important}
+body[data-wc-screen="game"] #wcHubSettings {display:flex!important;align-items:center!important;justify-content:center!important}
+#wcMusicToggle .wc-gear-icon,#wcHubSettings .wc-gear-icon {width:28px!important;height:28px!important;display:block!important;margin:auto!important}
+.wc-settings-overlay {z-index:11000!important}
+.wc-settings-overlay[hidden] {display:none!important;pointer-events:none!important}
+</style>
+<script id="wc-settings-navigation-repair">
+(()=>{
+ const hub=document.getElementById('wcHubSettings');
+ const menu=document.getElementById('wcMusicControl');
+ const overlay=document.getElementById('wcSettingsOverlay');
+ const home=document.getElementById('returnMenu');
+ if(!hub||!menu||!overlay)return;
+ // Escape the adventure layout's stacking/overflow context so the cog is always tappable.
+ document.body.appendChild(hub);
+ document.body.appendChild(menu);
+ const open=event=>{
+   event.preventDefault();event.stopImmediatePropagation();
+   overlay.hidden=false;
+   document.getElementById('wcSettingsClose')?.focus({preventScroll:true});
+ };
+ // Capture-phase handler avoids relying on page-specific or overlapping click handlers.
+ hub.addEventListener('click',open,true);
+ document.getElementById('wcMusicToggle')?.addEventListener('click',open,true);
+ if(home){
+   home.addEventListener('click',event=>{
+     // Returning to the title screen must never open settings as a side effect.
+     overlay.hidden=true;
+     event.stopPropagation();
+   },true);
+ }
+})();
+</script>
+</body></html>
